@@ -1,57 +1,53 @@
 import React, { useState } from 'react';
-import { Note } from '../utils/types';
 import { v4 as uuidv4 } from 'uuid';
 import EditNotePopUp from '../components/pages/home/editNotePopUp';
 import NoteList from '../components/molecules/note-list/note-list';
+import {
+  addNote,
+  deleteNote as deleteNoteReducer,
+  updateNote as updateNoteReducer,
+} from '../features/home/slice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { selectAllNotes } from '../features/home/selectors';
 
 export default function Home() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [newNote, setNewNote] = useState<Note>({
-    title: '',
-    body: '',
-    id: '',
-  });
-  const [editNote, setEditNote] = useState<Note>({
-    title: '',
-    body: '',
-    id: '',
-  });
+  const dispatch = useAppDispatch();
+
   const [isEditNotePopUpOpen, setIsEditNotePopUpOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState({
+    body: '',
+    title: '',
+    id: '',
+  });
+  const [submittedNote, setSubmittedNote] = useState({
+    body: '',
+    title: '',
+    id: '',
+  });
 
-  const addNote = (title: string, body: string, id: string) => {
-    setNotes([
-      ...notes,
-      {
-        title,
-        body,
-        id,
-      },
-    ]);
-  };
-
-  const deleteNote = (id: string) => {
-    setNotes(notes.filter(({ id: ident }) => ident !== id));
-  };
+  const notes = useAppSelector(selectAllNotes);
 
   const updateNote = (title: string, body: string, id: string) => {
-    setNotes(
-      notes.map((note) => {
-        if (note.id === id) {
-          return {
-            title: title,
-            body: body,
-            id: id,
-          };
-        }
-
-        return note;
+    dispatch(
+      updateNoteReducer({
+        id,
+        title,
+        body,
       })
     );
     setIsEditNotePopUpOpen(false);
   };
 
+  const deleteNote = (id: string) => {
+    dispatch(
+      deleteNoteReducer({
+        id,
+      })
+    );
+  };
+
   const openUpdateModal = (title: string, body: string, id: string) => {
-    setEditNote({
+    setSelectedNote({
       title,
       body,
       id,
@@ -69,7 +65,9 @@ export default function Home() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            addNote(newNote?.title, newNote?.body, uuidv4());
+            dispatch(
+              addNote({ title: submittedNote.title, body: submittedNote.body, id: uuidv4() })
+            );
           }}
           className="mb-10 space-y-4 rounded-2xl bg-white/90 p-6 shadow-xl backdrop-blur-sm"
         >
@@ -83,8 +81,8 @@ export default function Home() {
             <input
               id="title"
               required
-              value={newNote.title}
-              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+              value={submittedNote.title}
+              onChange={(e) => setSubmittedNote({ ...submittedNote, title: e.target.value })}
               placeholder="Give it a title..."
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
@@ -99,8 +97,8 @@ export default function Home() {
             <input
               id="body"
               required
-              value={newNote.body}
-              onChange={(e) => setNewNote({ ...newNote, body: e.target.value })}
+              value={submittedNote.body}
+              onChange={(e) => setSubmittedNote({ ...submittedNote, body: e.target.value })}
               placeholder="What's on your mind?"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 placeholder:text-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
             />
@@ -118,8 +116,8 @@ export default function Home() {
         isOpen={isEditNotePopUpOpen}
         setIsOpen={setIsEditNotePopUpOpen}
         updateNote={updateNote}
-        editNote={editNote}
-        setEditNote={setEditNote}
+        editNote={selectedNote}
+        setEditNote={setSelectedNote}
       />
     </div>
   );
