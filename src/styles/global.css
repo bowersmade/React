@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Neutrals */
+    --color-primary: 9 9 11;
+    --color-secondary: 82 82 91;
+    --color-muted: 113 113 122;
+    --color-border: 228 228 231;
+    --color-page: 248 249 250;
+    --color-surface: 255 255 255;
+
+    /* Severity */
+    --color-critical: 220 38 38;
+    --color-critical-bg: 254 242 242;
+    --color-critical-border: 254 202 202;
+
+    --color-high: 249 115 22;
+    --color-high-bg: 255 247 237;
+    --color-high-border: 254 215 170;
+
+    --color-medium: 217 119 6;
+    --color-medium-bg: 255 251 235;
+    --color-medium-border: 253 230 138;
+
+    --color-low: 79 70 229;
+    --color-low-bg: 238 242 255;
+    --color-low-border: 199 210 254;
+
+    /* Semantic */
+    --color-info: 99 102 241;
+    --color-info-bg: 238 242 255;
+    --color-info-border: 199 210 254;
+
+    --color-resolved: 22 163 74;
+    --color-resolved-bg: 240 253 244;
+    --color-resolved-border: 187 247 208;
+  }
+
+  body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: rgb(var(--color-page));
+    color: rgb(var(--color-primary));
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: rgb(255 255 255 / 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgb(255 255 255 / 0.5);
+  }
+
+  .skeleton {
+    background-image: linear-gradient(
+      90deg,
+      rgb(var(--color-border) / 0.4) 25%,
+      rgb(var(--color-border) / 0.8) 50%,
+      rgb(var(--color-border) / 0.4) 75%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}

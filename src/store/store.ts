@@ -1,9 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { homeReducer, homeKey } from '../features/home/slice';
 
 export const store = configureStore({
   reducer: {
-    [homeKey]: homeReducer,
+    // Slices go here — e.g. the global filter slice (kaiStatus toggles, group/repo scope).
   },
 });
 
