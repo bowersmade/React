@@ -23,6 +23,9 @@ import MetricTile from '../../components/molecules/metric-tile/metric-tile';
 import ChartLegend from '../../components/molecules/chart-legend/chart-legend';
 import StateMessage from '../../components/molecules/state-message/state-message';
 import ScopeSelect from '../../components/molecules/scope-select/scope-select';
+import SeverityDonut from '../../components/organisms/severity-donut/severity-donut';
+import TrendChart from '../../components/organisms/trend-chart/trend-chart';
+import RiskVectors from '../../components/organisms/risk-vectors/risk-vectors';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -79,6 +82,35 @@ export default function Sandbox() {
     { id: 'app_jxdyheml', label: 'app_jxdyheml', count: 1678 },
     { id: 'allocate-app_yxshneby-calc', label: 'allocate-app_yxshneby-calc', count: 1584 },
     { id: 'app_gonzfixi', label: 'app_gonzfixi', count: 789 },
+  ];
+
+  // Real figures from public/data/meta.json.
+  const severityCounts = { critical: 1773, high: 45841, medium: 127993, low: 61049 };
+
+  const trendData = [
+    { month: '2023-12', critical: 1, high: 53, medium: 4013, low: 767 },
+    { month: '2024-01', critical: 2, high: 1421, medium: 906, low: 824 },
+    { month: '2024-02', critical: 0, high: 369, medium: 2600, low: 832 },
+    { month: '2024-03', critical: 0, high: 2973, medium: 1612, low: 976 },
+    { month: '2024-04', critical: 1, high: 1197, medium: 1700, low: 475 },
+    { month: '2024-05', critical: 1, high: 469, medium: 2148, low: 1409 },
+    { month: '2024-06', critical: 20, high: 11, medium: 883, low: 1933 },
+    { month: '2024-07', critical: 2, high: 2020, medium: 1012, low: 841 },
+    { month: '2024-08', critical: 11, high: 228, medium: 1602, low: 1374 },
+    { month: '2024-09', critical: 0, high: 810, medium: 1192, low: 1420 },
+    { month: '2024-10', critical: 18, high: 142, medium: 4772, low: 702 },
+    { month: '2024-11', critical: 0, high: 338, medium: 1663, low: 134 },
+    { month: '2024-12', critical: 2, high: 839, medium: 1595, low: 570 },
+  ];
+
+  const riskFactors = [
+    { label: 'Has fix', count: 193926 },
+    { label: 'Attack vector: network', count: 175691 },
+    { label: 'Attack complexity: low', count: 144929 },
+    { label: 'Medium severity', count: 127993 },
+    { label: 'DoS - High', count: 99666 },
+    { label: 'High severity', count: 45841 },
+    { label: 'DoS - Low', count: 45071 },
   ];
 
   const severityLegend = [
@@ -419,6 +451,27 @@ export default function Sandbox() {
               </Typography>
               <ChartLegend items={severityLegend} direction="row" />
             </Card>
+          </div>
+        </Section>
+
+        <Section title="Charts">
+          <div className="space-y-4">
+            <TrendChart data={trendData} />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <SeverityDonut counts={severityCounts} />
+              <RiskVectors factors={riskFactors} total={236656} />
+            </div>
+
+            <Typography size="body-sm" color="muted" className="mt-6 mb-2.5">
+              Loading, empty and sparse states
+            </Typography>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <SeverityDonut counts={severityCounts} loading />
+              <SeverityDonut counts={{ critical: 0, high: 0, medium: 0, low: 0 }} />
+              <RiskVectors factors={[]} total={0} />
+              <TrendChart data={trendData.slice(0, 2)} />
+            </div>
           </div>
         </Section>
 
