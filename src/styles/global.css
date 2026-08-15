@@ -56,6 +56,20 @@
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
   }
 
+  /*
+   * Menus, dropdowns and popovers. Unlike the display-only glass levels these
+   * sit over arbitrary content, so the fill is near-opaque — text behind a
+   * translucent menu is unreadable.
+   */
+  .panel {
+    background-color: rgb(23 24 84);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgb(var(--surface-line));
+    box-shadow:
+      0 12px 32px rgb(0 0 0 / 0.45),
+      0 2px 8px rgb(0 0 0 / 0.3);
+  }
+
   /* Level 3 — modal / dialog */
   .glass-3 {
     background-color: rgb(255 255 255 / 0.1);
