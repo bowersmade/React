@@ -1,5 +1,5 @@
 import type { ComponentProps, ElementType, ReactNode } from 'react';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '../../../utils/cn';
 
 export type TypographyTag =
   | 'h1'
@@ -34,6 +34,8 @@ const sizeMap = {
   body: 'text-body',
   'body-sm': 'text-body-sm',
   caption: 'text-caption',
+  mono: 'text-mono',
+  'mono-sm': 'text-mono-sm',
 } as const;
 
 const fontMap = {
@@ -46,13 +48,15 @@ const colorMap = {
   primary: 'text-primary',
   secondary: 'text-secondary',
   muted: 'text-muted',
+  disabled: 'text-disabled',
   critical: 'text-critical',
   high: 'text-high',
   medium: 'text-medium',
   low: 'text-low',
   info: 'text-info',
   resolved: 'text-resolved',
-  white: 'text-white',
+  accent: 'text-accent',
+  teal: 'text-teal',
   inherit: 'text-inherit',
 } as const;
 
@@ -64,6 +68,8 @@ const defaultTagMap: Record<keyof typeof sizeMap, TypographyTag> = {
   body: 'p',
   'body-sm': 'p',
   caption: 'span',
+  mono: 'span',
+  'mono-sm': 'span',
 };
 
 const defaultFontMap: Record<keyof typeof sizeMap, keyof typeof fontMap> = {
@@ -74,12 +80,29 @@ const defaultFontMap: Record<keyof typeof sizeMap, keyof typeof fontMap> = {
   body: 'sans',
   'body-sm': 'sans',
   caption: 'sans',
+  mono: 'mono',
+  'mono-sm': 'mono',
+};
+
+/** Default weight per size, matching the Figma type specimens. Override with `weight`. */
+const defaultWeightMap: Record<keyof typeof sizeMap, keyof typeof weightMap> = {
+  display: 'bold',
+  h1: 'bold',
+  h2: 'semiBold',
+  h3: 'semiBold',
+  body: 'regular',
+  'body-sm': 'regular',
+  caption: 'semiBold',
+  mono: 'medium',
+  'mono-sm': 'regular',
 };
 
 interface PolymorphicTypographyProps {
   as?: TypographyTag;
   size?: keyof typeof sizeMap;
+  /** Defaults per size (Display bold, H2/H3 semiBold, Caption semiBold, Mono medium). */
   weight?: keyof typeof weightMap;
+  /** Defaults to Gabarito for headings, Inter for body. Use 'mono' for CVE IDs, versions and registry paths. */
   font?: keyof typeof fontMap;
   color?: keyof typeof colorMap;
   truncate?: boolean;
@@ -93,7 +116,7 @@ export type TypographyProps<T extends ElementType> = PolymorphicTypographyProps 
 const Typography = <T extends ElementType = 'p'>({
   as,
   size = 'body',
-  weight = 'regular',
+  weight,
   font,
   color = 'primary',
   truncate = false,
@@ -103,15 +126,16 @@ const Typography = <T extends ElementType = 'p'>({
 }: TypographyProps<T>) => {
   const Component = as ?? defaultTagMap[size];
   const fontClass = fontMap[font ?? defaultFontMap[size]];
+  const weightClass = weightMap[weight ?? defaultWeightMap[size]];
 
   return (
     <Component
       data-testid="sn-typography"
-      className={twMerge(
+      className={cn(
         'group not-italic',
         fontClass,
         sizeMap[size],
-        weightMap[weight],
+        weightClass,
         colorMap[color],
         truncate && 'relative truncate',
         className
@@ -121,8 +145,8 @@ const Typography = <T extends ElementType = 'p'>({
       {children}
       {truncate ? (
         <span
-          className={twMerge(
-            'border-line text-secondary text-caption absolute z-20 hidden max-w-sm rounded border bg-white px-2 py-1 text-left font-sans break-words whitespace-normal shadow-sm group-hover:flex'
+          className={cn(
+            'glass-2 text-secondary text-caption absolute z-20 hidden max-w-sm rounded-sm px-2 py-1 text-left font-sans break-words whitespace-normal group-hover:flex'
           )}
         >
           {children}

@@ -6,39 +6,29 @@
 
 @layer base {
   :root {
-    /* Neutrals */
-    --color-primary: 9 9 11;
-    --color-secondary: 82 82 91;
-    --color-muted: 113 113 122;
-    --color-border: 228 228 231;
-    --color-page: 248 249 250;
-    --color-surface: 255 255 255;
+    /* Neutrals — dark theme */
+    --color-page: 8 9 67; /* #080943 */
+    --color-text-primary: 255 255 255; /* #FFFFFF */
+    --color-text-secondary: 169 172 176; /* #A9ACB0 */
+    --color-text-muted: 156 164 192; /* #9CA4C0 */
+    --color-text-disabled: 132 132 132; /* #848484 */
 
     /* Severity */
-    --color-critical: 220 38 38;
-    --color-critical-bg: 254 242 242;
-    --color-critical-border: 254 202 202;
+    --color-critical: 220 38 38; /* #DC2626 */
+    --color-high: 249 115 22; /* #F97316 */
+    --color-medium: 217 119 6; /* #D97706 */
+    --color-low: 79 70 229; /* #4F46E5 */
 
-    --color-high: 249 115 22;
-    --color-high-bg: 255 247 237;
-    --color-high-border: 254 215 170;
+    /* Semantic & accents */
+    --color-info: 99 102 241; /* #6366F1 */
+    --color-resolved: 22 163 74; /* #16A34A */
+    --color-accent: 0 191 255; /* #00BFFF */
+    --color-teal: 138 240 227; /* #8AF0E3 */
 
-    --color-medium: 217 119 6;
-    --color-medium-bg: 255 251 235;
-    --color-medium-border: 253 230 138;
-
-    --color-low: 79 70 229;
-    --color-low-bg: 238 242 255;
-    --color-low-border: 199 210 254;
-
-    /* Semantic */
-    --color-info: 99 102 241;
-    --color-info-bg: 238 242 255;
-    --color-info-border: 199 210 254;
-
-    --color-resolved: 22 163 74;
-    --color-resolved-bg: 240 253 244;
-    --color-resolved-border: 187 247 208;
+    /* Glass surfaces — white at low alpha over the dark page */
+    --surface-1: 255 255 255 / 0.08;
+    --surface-2: 255 255 255 / 0.14;
+    --surface-line: 255 255 255 / 0.1;
   }
 
   body {
@@ -46,23 +36,48 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: rgb(var(--color-page));
-    color: rgb(var(--color-primary));
+    color: rgb(var(--color-text-primary));
   }
 }
 
 @layer utilities {
+  /* Level 1 — subtle card */
   .glass {
-    background-color: rgb(255 255 255 / 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgb(255 255 255 / 0.5);
+    background-color: rgb(var(--surface-1));
+    backdrop-filter: blur(24px);
+    border: 1px solid rgb(var(--surface-line));
+  }
+
+  /* Level 2 — floating / popover */
+  .glass-2 {
+    background-color: rgb(var(--surface-2));
+    backdrop-filter: blur(24px);
+    border: 1px solid rgb(var(--surface-line));
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  }
+
+  /* Level 3 — modal / dialog */
+  .glass-3 {
+    background-color: rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgb(var(--surface-line));
+    box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+  }
+
+  /* Ambient colour clouds that sit beneath the glass plates. */
+  .glow {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+    pointer-events: none;
   }
 
   .skeleton {
     background-image: linear-gradient(
       90deg,
-      rgb(var(--color-border) / 0.4) 25%,
-      rgb(var(--color-border) / 0.8) 50%,
-      rgb(var(--color-border) / 0.4) 75%
+      rgb(255 255 255 / 0.06) 25%,
+      rgb(255 255 255 / 0.12) 50%,
+      rgb(255 255 255 / 0.06) 75%
     );
     background-size: 200% 100%;
   }
