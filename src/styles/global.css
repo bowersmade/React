@@ -86,14 +86,33 @@
     pointer-events: none;
   }
 
+  /*
+   * The sheen is a pseudo-element sliding on `transform`, not an animated
+   * `background-position`. Transform animations run on the compositor thread,
+   * so the shimmer keeps moving while the main thread is blocked — which it
+   * is, for the whole time we're parsing the dataset and aggregating it.
+   * A paint-driven animation freezes exactly when the user most needs to see
+   * that something is still happening.
+   */
   .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(255 255 255 / 0.06);
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
     background-image: linear-gradient(
       90deg,
-      rgb(255 255 255 / 0.06) 25%,
-      rgb(255 255 255 / 0.12) 50%,
-      rgb(255 255 255 / 0.06) 75%
+      transparent 0%,
+      rgb(255 255 255 / 0.1) 50%,
+      transparent 100%
     );
-    background-size: 200% 100%;
+    transform: translateX(-100%);
+    animation: shimmer 1.5s linear infinite;
+    will-change: transform;
   }
 }
 
@@ -119,9 +138,24 @@
 
 @keyframes shimmer {
   from {
-    background-position: -200% 0;
+    transform: translateX(-100%);
   }
   to {
-    background-position: 200% 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Respect the OS-level setting. Skeletons still read as placeholders without
+   the motion, so hold the sheen still rather than removing it. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    transform: translateX(0);
+    opacity: 0.5;
+  }
+
+  .animate-fade-in,
+  .animate-slide-in-right {
+    animation: none;
   }
 }

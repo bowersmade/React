@@ -3,13 +3,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { Typography } from '../../foundations/typography/typography';
 import ChartCard from '../chart-card/chart-card';
 import ChartLegend from '../../molecules/chart-legend/chart-legend';
-import {
-  chartColors,
-  chartColorClasses,
-  severityLabels,
-  severityOrder,
-  type SeverityKey,
-} from '../../../utils/chart-colors';
+import { chartColors, chartColorClasses, severityLabels } from '../../../utils/chart-colors';
+import { SeverityKey, severityOrder } from '../../../utils/types/data';
 
 export interface SeverityDonutProps {
   /** Vulnerability count per severity. */

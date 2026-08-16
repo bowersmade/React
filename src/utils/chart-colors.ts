@@ -1,3 +1,5 @@
+import { SeverityKey } from './types/data';
+
 /**
  * Recharts renders SVG and needs literal colour values, not Tailwind classes.
  * These mirror the custom properties in src/styles/global.css — if a token
@@ -34,9 +36,6 @@ export const chartChrome = {
   axis: 'rgba(255,255,255,0.25)',
   axisText: '#9CA4C0',
 } as const;
-
-export const severityOrder = ['critical', 'high', 'medium', 'low'] as const;
-export type SeverityKey = (typeof severityOrder)[number];
 
 export const severityLabels: Record<SeverityKey, string> = {
   critical: 'Critical',

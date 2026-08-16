@@ -8,13 +8,19 @@
  *
  *   public/data/index.json         one record per vulnerability, only the
  *                                  fields the list and filters need
- *   public/data/meta.json          pre-computed aggregates for the dashboard
  *   public/data/descriptions.json  CVE -> description, deduplicated
+ *   public/data/meta.json          the scanned group and repo lists
  *
  * The split is by access pattern, not by page. Descriptions are ~29% of the
  * source file but are only ever read one record at a time, so they are kept
- * out of the main payload. Aggregates are computed here once rather than in
- * the browser on every load.
+ * out of the main payload.
+ *
+ * meta.json deliberately carries no totals — every number on the dashboard
+ * responds to the active filters, so it has to be counted from the in-scope
+ * records at runtime anyway. What it does carry is the set of groups and repos
+ * that were *scanned*, which cannot be recovered from the findings: a group
+ * with zero vulnerabilities appears nowhere in index.json, and "scanned, all
+ * clear" is a state the UI should be able to show rather than silently omit.
  *
  * Run with: npm run build:data
  */
@@ -54,39 +60,21 @@ function main() {
   const records = [];
   const descriptions = {};
 
-  const stats = {
-    total: 0,
-    bySeverity: { critical: 0, high: 0, medium: 0, low: 0 },
-    byKaiStatus: { unreviewed: 0, manuallyCleared: 0, aiCleared: 0 },
-    withFix: 0,
-    counts: { groups: 0, repos: 0, images: 0 },
-    riskFactors: {},
-    trend: {}, // 'YYYY-MM' -> { critical, high, medium, low }
-    byGroup: {},
-    byRepo: {},
-    packageTypes: {},
-  };
-
-  const bumpTrend = (month, severity) => {
-    if (!stats.trend[month]) {
-      stats.trend[month] = { critical: 0, high: 0, medium: 0, low: 0 };
-    }
-    stats.trend[month][severity] += 1;
-  };
+  // Seeded on entering each node in the source tree, so scopes with no findings
+  // still appear — with a count of 0.
+  const meta = { groups: {}, repos: {}, imageCount: 0 };
 
   console.log('Transforming…');
 
   for (const [groupName, group] of Object.entries(raw.groups ?? {})) {
-    stats.counts.groups += 1;
-    stats.byGroup[groupName] = 0;
+    meta.groups[groupName] = meta.groups[groupName] ?? 0;
 
     for (const [repoName, repo] of Object.entries(group.repos ?? {})) {
-      stats.counts.repos += 1;
-      stats.byRepo[repoName] = stats.byRepo[repoName] ?? 0;
+      meta.repos[repoName] = meta.repos[repoName] ?? 0;
 
       for (const [imageVersion, image] of Object.entries(repo.images ?? {})) {
         const imageName = image.name ?? `${repoName}:${imageVersion}`;
-        stats.counts.images += 1;
+        meta.imageCount += 1;
 
         for (const vuln of image.vulnerabilities ?? []) {
           const severity = vuln.severity ?? 'low';
@@ -118,34 +106,12 @@ function main() {
             descriptions[vuln.cve] = vuln.description;
           }
 
-          stats.total += 1;
-          if (stats.bySeverity[severity] !== undefined) stats.bySeverity[severity] += 1;
-          if (hasFix) stats.withFix += 1;
-
-          if (vuln.kaiStatus === 'invalid - norisk') stats.byKaiStatus.manuallyCleared += 1;
-          else if (vuln.kaiStatus === 'ai-invalid-norisk') stats.byKaiStatus.aiCleared += 1;
-          else stats.byKaiStatus.unreviewed += 1;
-
-          stats.byGroup[groupName] += 1;
-          stats.byRepo[repoName] += 1;
-
-          const type = vuln.packageType ?? '';
-          if (type) stats.packageTypes[type] = (stats.packageTypes[type] ?? 0) + 1;
-
-          for (const factor of Object.keys(vuln.riskFactors ?? {})) {
-            stats.riskFactors[factor] = (stats.riskFactors[factor] ?? 0) + 1;
-          }
-
-          if (published) bumpTrend(published.slice(0, 7), severity);
+          meta.groups[groupName] += 1;
+          meta.repos[repoName] += 1;
         }
       }
     }
   }
-
-  // Sort risk factors by frequency so the dashboard can take the top N.
-  stats.riskFactors = Object.fromEntries(
-    Object.entries(stats.riskFactors).sort((a, b) => b[1] - a[1])
-  );
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -157,16 +123,25 @@ function main() {
 
   console.log('Writing…');
   write('index.json', records);
-  write('meta.json', stats);
   write('descriptions.json', descriptions);
+  write('meta.json', meta);
+
+  const groupCount = Object.keys(meta.groups).length;
+  const repoCount = Object.keys(meta.repos).length;
+  const emptyGroups = Object.values(meta.groups).filter((n) => n === 0).length;
+  const emptyRepos = Object.values(meta.repos).filter((n) => n === 0).length;
 
   console.log(
     `\nDone in ${((Date.now() - started) / 1000).toFixed(1)}s — ` +
-      `${stats.total.toLocaleString()} vulnerabilities across ` +
-      `${stats.counts.images.toLocaleString()} images, ` +
-      `${stats.counts.repos.toLocaleString()} repos, ` +
-      `${stats.counts.groups} groups.`
+      `${records.length.toLocaleString()} vulnerabilities across ` +
+      `${meta.imageCount.toLocaleString()} images, ` +
+      `${repoCount.toLocaleString()} repos, ` +
+      `${groupCount} groups.`
   );
+
+  if (emptyGroups || emptyRepos) {
+    console.log(`  clean (0 findings): ${emptyGroups} groups, ${emptyRepos} repos.`);
+  }
 }
 
 main();

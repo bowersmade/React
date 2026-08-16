@@ -17,18 +17,8 @@ import {
   chartColors,
   chartColorClasses,
   severityLabels,
-  severityOrder,
-  type SeverityKey,
 } from '../../../utils/chart-colors';
-
-export interface TrendPoint {
-  /** 'YYYY-MM'. */
-  month: string;
-  critical: number;
-  high: number;
-  medium: number;
-  low: number;
-}
+import { severityOrder, SeverityKey, TrendPoint } from '../../../utils/types/data';
 
 export interface TrendChartProps {
   data: TrendPoint[];

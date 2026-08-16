@@ -10,22 +10,22 @@ import {
   Database,
 } from 'lucide-react';
 
-import { Typography } from '../../components/foundations/typography/typography';
-import Card from '../../components/atoms/card/card';
-import Button from '../../components/atoms/button/button';
-import SeverityBadge from '../../components/atoms/severity-badge/severity-badge';
-import FilterToggle from '../../components/atoms/filter-toggle/filter-toggle';
-import ProgressBar from '../../components/atoms/progress-bar/progress-bar';
-import Skeleton from '../../components/atoms/skeleton/skeleton';
-import Spinner from '../../components/atoms/spinner/spinner';
-import Checkbox from '../../components/atoms/checkbox/checkbox';
-import MetricTile from '../../components/molecules/metric-tile/metric-tile';
-import ChartLegend from '../../components/molecules/chart-legend/chart-legend';
-import StateMessage from '../../components/molecules/state-message/state-message';
-import ScopeSelect from '../../components/molecules/scope-select/scope-select';
-import SeverityDonut from '../../components/organisms/severity-donut/severity-donut';
-import TrendChart from '../../components/organisms/trend-chart/trend-chart';
-import RiskVectors from '../../components/organisms/risk-vectors/risk-vectors';
+import { Typography } from '../components/foundations/typography/typography';
+import Card from '../components/atoms/card/card';
+import Button from '../components/atoms/button/button';
+import SeverityBadge from '../components/atoms/severity-badge/severity-badge';
+import FilterToggle from '../components/atoms/filter-toggle/filter-toggle';
+import ProgressBar from '../components/atoms/progress-bar/progress-bar';
+import Skeleton from '../components/atoms/skeleton/skeleton';
+import Spinner from '../components/atoms/spinner/spinner';
+import Checkbox from '../components/atoms/checkbox/checkbox';
+import MetricTile from '../components/molecules/metric-tile/metric-tile';
+import ChartLegend from '../components/molecules/chart-legend/chart-legend';
+import StateMessage from '../components/molecules/state-message/state-message';
+import ScopeSelect from '../components/molecules/scope-select/scope-select';
+import SeverityDonut from '../components/organisms/severity-donut/severity-donut';
+import TrendChart from '../components/organisms/trend-chart/trend-chart';
+import RiskVectors from '../components/organisms/risk-vectors/risk-vectors';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
