@@ -18,6 +18,14 @@ const TrendAnalysis = lazy(() => import('./pages/TrendAnalysis'));
 const Compare = lazy(() => import('./pages/Compare'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+/**
+ * Design system playground at /sandbox. Lazy like everything else, so it costs
+ * nothing to anyone who never opens it — but it does ship. If that bothers you,
+ * gate the route on `process.env.NODE_ENV === 'development'` and the bundler
+ * will drop the chunk from production entirely.
+ */
+const Sandbox = lazy(() => import('./pages/Sandbox'));
+
 /** Shown while a route's chunk is downloading — usually a few hundred ms, once per route. */
 function RouteFallback() {
   return (
@@ -43,6 +51,7 @@ function App() {
           <Route path="/vulnerabilities" element={<VulnerabilityList />} />
           <Route path="/trends" element={<TrendAnalysis />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/sandbox" element={<Sandbox />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

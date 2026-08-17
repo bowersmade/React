@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  ArrowUpDown,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Sparkles,
   Download,
   Search,
@@ -19,6 +22,24 @@ import ProgressBar from '../components/atoms/progress-bar/progress-bar';
 import Skeleton from '../components/atoms/skeleton/skeleton';
 import Spinner from '../components/atoms/spinner/spinner';
 import Checkbox from '../components/atoms/checkbox/checkbox';
+import IconButton from '../components/atoms/icon-button/icon-button';
+import TextInput from '../components/atoms/text-input/text-input';
+import Select from '../components/atoms/select/select';
+import Chip from '../components/atoms/chip/chip';
+import Badge from '../components/atoms/badge/badge';
+// Aliased — `ExternalLink` is already taken by the lucide icon imported above.
+import ExternalLinkAtom from '../components/atoms/external-link/external-link';
+import Kbd from '../components/atoms/kbd/kbd';
+import SearchInput from '../components/molecules/search-input/search-input';
+import FilterBar, { type AppliedFilter } from '../components/molecules/filter-bar/filter-bar';
+import TableToolbar from '../components/molecules/table-toolbar/table-toolbar';
+import { type SortDirection } from '../components/molecules/sort-header/sort-header';
+import VulnerabilityTable from '../components/organisms/vulnerability-table/vulnerability-table';
+import DetailDrawer from '../components/organisms/detail-drawer/detail-drawer';
+import FilterModal, {
+  type FilterModalValue,
+} from '../components/organisms/filter-modal/filter-modal';
+import type { SeverityKey, Vulnerability } from '../utils/types/data';
 import MetricTile from '../components/molecules/metric-tile/metric-tile';
 import ChartLegend from '../components/molecules/chart-legend/chart-legend';
 import StateMessage from '../components/molecules/state-message/state-message';
@@ -54,6 +75,52 @@ export default function Sandbox() {
   const [analysis, setAnalysis] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(true);
   const [checked, setChecked] = useState(true);
+  const [query, setQuery] = useState('openssl');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeRow, setActiveRow] = useState<Vulnerability | null>(null);
+  const [sortKey, setSortKey] = useState<string | null>('severity');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filterValue, setFilterValue] = useState<FilterModalValue>({
+    severities: ['critical', 'high'],
+    riskFactors: [],
+    hasFixOnly: false,
+    hideManuallyCleared: false,
+    hideAiCleared: true,
+  });
+  const [demoFilters, setDemoFilters] = useState<AppliedFilter[]>([
+    { id: 'severity', label: 'Severity', value: 'Critical, High' },
+    { id: 'group', label: 'Group', value: '1389-ci-cd' },
+    { id: 'repo', label: 'Repo', value: 'app_uxgwrned-dg', mono: true },
+  ]);
+
+  /**
+   * 500 rows so the virtualisation is actually visible — with a handful you
+   * cannot tell it apart from rendering everything.
+   */
+  const demoRows = useMemo<Vulnerability[]>(() => {
+    const severities: SeverityKey[] = ['critical', 'high', 'medium', 'low'];
+    const packages = ['spring-web', 'openssl', 'libxml2', 'glibc', 'log4j-core', 'zlib'];
+    const kaiStatuses: Vulnerability['kaiStatus'][] = ['', '', '', 'invalid - norisk', 'ai-invalid-norisk'];
+
+    return Array.from({ length: 500 }, (_, i) => ({
+      cve: `CVE-2024-${String(10000 + i).slice(0, 5)}`,
+      severity: severities[i % severities.length],
+      cvss: Number((3 + (i % 70) / 10).toFixed(1)),
+      packageName: packages[i % packages.length],
+      packageVersion: `${1 + (i % 6)}.${i % 12}.${i % 20}`,
+      packageType: i % 2 ? 'jar' : 'rpm',
+      published: `2024-${String((i % 12) + 1).padStart(2, '0')}-15`,
+      fixStatus: i % 3 ? `fixed in ${2 + (i % 5)}.0.1` : 'affected',
+      hasFix: i % 3 !== 0,
+      kaiStatus: kaiStatuses[i % kaiStatuses.length],
+      riskFactors: ['Attack vector: network', 'Has fix', 'Attack complexity: low'].slice(0, (i % 3) + 1),
+      link: `https://nvd.nist.gov/vuln/detail/CVE-2024-${String(10000 + i).slice(0, 5)}`,
+      group: '1389-ci-cd',
+      repo: `app_${['uxgwrned-dg', 'crpfcofv', 'bdhuplqb'][i % 3]}`,
+      image: `quay.example.priv/1389-ci-cd/app_${['uxgwrned-dg', 'crpfcofv', 'bdhuplqb'][i % 3]}:1.0.${i % 9}`,
+    }));
+  }, []);
   const [hiddenSeries, setHiddenSeries] = useState<string[]>(['low']);
 
   const toggleSeries = (id: string) =>
@@ -208,15 +275,16 @@ export default function Sandbox() {
               View advisory
             </Button>
           </Row>
-          <Row label="Sizes and icon-only">
+          <Row label="Sizes">
             <Button size="sm" icon={Search}>
               Small
             </Button>
             <Button size="md" icon={Search}>
               Medium
             </Button>
-            <Button size="sm" iconOnly icon={X} aria-label="Dismiss" />
-            <Button size="md" iconOnly icon={X} aria-label="Dismiss" />
+            {/* Icon-only controls are IconButton — see its own row below. */}
+            <IconButton size="sm" icon={X} label="Dismiss" />
+            <IconButton size="md" icon={X} label="Dismiss" />
           </Row>
           <Row label="Disabled">
             <Button variant="primary" disabled>
@@ -358,6 +426,105 @@ export default function Sandbox() {
           </Row>
         </Section>
 
+        <Section title="Icon Button">
+          <Row label="Tones">
+            <IconButton icon={X} label="Dismiss" />
+            <IconButton icon={Download} label="Export" tone="glass" />
+            <IconButton icon={ArrowUpDown} label="Sort" active />
+            <IconButton icon={X} label="Dismiss" disabled />
+          </Row>
+          <Row label="Sizes">
+            <IconButton size="sm" icon={ChevronLeft} label="Previous page" />
+            <IconButton size="md" icon={ChevronRight} label="Next page" />
+          </Row>
+        </Section>
+
+        <Section title="Text Input">
+          <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
+            <TextInput
+              label="Search"
+              icon={Search}
+              placeholder="CVE, package, or image…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onClear={() => setQuery('')}
+            />
+            <TextInput label="Package name" placeholder="spring-web" hint="Exact match only" />
+            <TextInput label="CVSS minimum" defaultValue="banana" error="Must be a number" />
+            <TextInput label="Disabled" placeholder="Unavailable" disabled />
+            <TextInput size="sm" label="Small" icon={Search} placeholder="Compact row" />
+          </div>
+        </Section>
+
+        <Section title="Select">
+          <div className="grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
+            <Select
+              label="Sort by"
+              options={[
+                { value: 'severity', label: 'Severity (high to low)' },
+                { value: 'cvss', label: 'CVSS score' },
+                { value: 'published', label: 'Date published' },
+                { value: 'package', label: 'Package name' },
+              ]}
+            />
+            <Select
+              size="sm"
+              label="Rows per page"
+              options={[
+                { value: '25', label: '25' },
+                { value: '50', label: '50' },
+                { value: '100', label: '100' },
+              ]}
+            />
+          </div>
+        </Section>
+
+        <Section title="Chip">
+          <Row label="Applied filters">
+            <Chip label="Severity" value="Critical" onRemove={() => {}} />
+            <Chip label="Group" value="1389-ci-cd" onRemove={() => {}} />
+            <Chip label="Repo" value="app_uxgwrned-dg" mono onRemove={() => {}} />
+            <Chip label="Risk" value="Exploit exists - in the wild" icon={Sparkles} onRemove={() => {}} />
+          </Row>
+          <Row label="Read-only — no remove button">
+            <Chip value="Has fix" />
+            <Chip label="Published" value="After 2024-01" />
+          </Row>
+        </Section>
+
+        <Section title="Badge">
+          <Row label="Tones">
+            <Badge>Unreviewed</Badge>
+            <Badge tone="info">AI cleared</Badge>
+            <Badge tone="resolved">Fix available</Badge>
+            <Badge tone="accent">New</Badge>
+          </Row>
+          <Row label="Monospace — package types and versions">
+            <Badge mono>jar</Badge>
+            <Badge mono>npm</Badge>
+            <Badge mono tone="info">5.1.8.RELEASE</Badge>
+          </Row>
+        </Section>
+
+        <Section title="External Link">
+          <Row label="Advisory links">
+            <ExternalLinkAtom href="https://nvd.nist.gov/vuln/detail/CVE-2024-22262">
+              CVE-2024-22262
+            </ExternalLinkAtom>
+            <ExternalLinkAtom href="https://issues.redhat.com/browse/UNDERTOW-1935" hideIcon>
+              Vendor tracker (no icon)
+            </ExternalLinkAtom>
+          </Row>
+        </Section>
+
+        <Section title="Kbd">
+          <Row label="Shortcut hints">
+            <Kbd>⌘K</Kbd>
+            <Kbd>Esc</Kbd>
+            <Kbd>⇧ + Click</Kbd>
+          </Row>
+        </Section>
+
         <Section title="Metric Tile">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricTile
@@ -496,7 +663,133 @@ export default function Sandbox() {
             </Card>
           </div>
         </Section>
+
+        <Section title="Search Input">
+          <div className="max-w-xl">
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              suggestions={
+                query.trim()
+                  ? [
+                      { id: 'a', label: 'CVE-2024-22262', kind: 'CVE', count: 412 },
+                      { id: 'b', label: 'openssl', kind: 'Package', count: 3891 },
+                      { id: 'c', label: 'openssl-libs', kind: 'Package', count: 1204 },
+                      { id: 'd', label: 'quay.example.priv/base-images/openssl:3.1', kind: 'Image', count: 88 },
+                    ]
+                  : []
+              }
+            />
+            <Typography size="caption" color="muted" className="mt-2">
+              Type to see suggestions. Matching is the caller's job — these are hardcoded.
+            </Typography>
+          </div>
+        </Section>
+
+        <Section title="Filter Bar">
+          <FilterBar
+            filters={demoFilters}
+            onRemove={(id) => setDemoFilters((prev) => prev.filter((f) => f.id !== id))}
+            onClear={() => setDemoFilters([])}
+            onAddFilter={() => setFilterModalOpen(true)}
+            resultCount={12483}
+            totalCount={236656}
+          />
+        </Section>
+
+        <Section title="Table Toolbar">
+          <Row label="Nothing selected">
+            <TableToolbar
+              selectedCount={0}
+              onClearSelection={() => {}}
+              onExport={() => {}}
+              onViewTrend={() => {}}
+              className="w-full"
+            />
+          </Row>
+          <Row label="Rows selected">
+            <TableToolbar
+              selectedCount={selectedIds.size}
+              onClearSelection={() => setSelectedIds(new Set())}
+              onCompare={() => {}}
+              className="w-full"
+            />
+          </Row>
+        </Section>
+
+        <Section title="Vulnerability Table">
+          <Card className="overflow-hidden rounded-lg p-0">
+            <VulnerabilityTable
+              rows={demoRows}
+              selectedIds={selectedIds}
+              activeId={activeRow ? `${activeRow.cve}::${activeRow.image}` : null}
+              sortKey={sortKey}
+              sortDirection={sortDirection}
+              onSort={(key) => {
+                if (key === sortKey) {
+                  setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+                } else {
+                  setSortKey(key);
+                  setSortDirection('desc');
+                }
+              }}
+              onToggleRow={(id) =>
+                setSelectedIds((prev) => {
+                  const next = new Set(prev);
+                  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                  next.has(id) ? next.delete(id) : next.add(id);
+                  return next;
+                })
+              }
+              onToggleAll={() =>
+                setSelectedIds((prev) =>
+                  prev.size === demoRows.length
+                    ? new Set()
+                    : new Set(demoRows.map((r) => `${r.cve}::${r.image}`))
+                )
+              }
+              onRowClick={setActiveRow}
+              height={420}
+            />
+          </Card>
+          <Typography size="caption" color="muted" className="mt-2">
+            500 rows, virtualised — inspect the DOM and only the visible ones exist. Click a row to
+            open the drawer.
+          </Typography>
+        </Section>
+
+        <Section title="Detail Drawer & Filter Modal">
+          <Row label="Open them">
+            <Button onClick={() => setActiveRow(demoRows[0])}>Open detail drawer</Button>
+            <Button onClick={() => setFilterModalOpen(true)}>Open filter modal</Button>
+          </Row>
+        </Section>
       </div>
+
+      <DetailDrawer
+        finding={activeRow}
+        onClose={() => setActiveRow(null)}
+        description="Spring Framework provides support for range requests. A specially crafted HTTP request may cause a denial of service condition in applications that serve static resources."
+      />
+
+      <FilterModal
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        value={filterValue}
+        onChange={setFilterValue}
+        onApply={() => setFilterModalOpen(false)}
+        onReset={() =>
+          setFilterValue({
+            severities: [],
+            riskFactors: [],
+            hasFixOnly: false,
+            hideManuallyCleared: false,
+            hideAiCleared: false,
+          })
+        }
+        riskFactorOptions={riskFactors.slice(0, 5)}
+        previewCount={12483}
+      />
     </div>
   );
 }

@@ -26,8 +26,6 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: LucideIcon;
   /** Rendered after the label. */
   trailingIcon?: LucideIcon;
-  /** Square button with no label — pass `aria-label` for the accessible name. */
-  iconOnly?: boolean;
   children?: ReactNode;
 }
 
@@ -36,7 +34,6 @@ export default function Button({
   size = 'md',
   icon: Icon,
   trailingIcon: TrailingIcon,
-  iconOnly = false,
   className = '',
   type = 'button',
   children,
@@ -52,13 +49,12 @@ export default function Button({
         'focus-visible:ring-accent focus-visible:ring-offset-page inline-flex items-center justify-center rounded-md font-sans font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40',
         variantMap[variant],
         sizeMap[size],
-        iconOnly && (size === 'sm' ? 'w-8 px-0' : 'w-10 px-0'),
         className
       )}
       {...restProps}
     >
       {Icon ? <Icon size={iconSize} aria-hidden="true" /> : null}
-      {iconOnly ? null : children}
+      {children}
       {TrailingIcon ? <TrailingIcon size={iconSize} aria-hidden="true" /> : null}
     </button>
   );
