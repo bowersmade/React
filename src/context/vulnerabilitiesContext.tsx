@@ -1,5 +1,5 @@
 import { createContext, ReactNode, useState, useEffect, useContext, useMemo } from 'react';
-import { ScanMeta, Vulnerability } from '../utils/types/data';
+import { KaiStatus, ScanMeta, SeverityKey, Vulnerability } from '../utils/types/data';
 
 export type VulnerabilityContextType = {
   data: Vulnerability[];
@@ -38,6 +38,82 @@ const dataUrls = () => {
   return [DATA_URL, META_URL];
 };
 
+/**
+ * index.json ships positionally: field names once, then one array of values per
+ * finding. Repeating the 14 keys on every record cost ~37MB.
+ */
+type EncodedIndex = {
+  fields: string[];
+  rows: unknown[][];
+};
+
+/**
+ * Turns the positional payload back into the objects the rest of the app uses.
+ *
+ * Column positions are read from `fields` rather than hardcoded, so reordering
+ * the producer's list cannot silently shift every value into the wrong
+ * property — a mismatch throws here instead of rendering nonsense.
+ */
+const decodeIndex = (payload: EncodedIndex): Vulnerability[] => {
+  const fields = payload?.fields;
+  const rows = payload?.rows;
+
+  if (!Array.isArray(fields) || !Array.isArray(rows)) {
+    throw new Error('Vulnerability data is not in the expected { fields, rows } format');
+  }
+
+  const at = (name: string) => {
+    const index = fields.indexOf(name);
+    if (index === -1) {
+      throw new Error(`Vulnerability data is missing the "${name}" column`);
+    }
+    return index;
+  };
+
+  const iCve = at('cve');
+  const iSeverity = at('severity');
+  const iCvss = at('cvss');
+  const iPackageName = at('packageName');
+  const iPackageVersion = at('packageVersion');
+  const iPackageType = at('packageType');
+  const iPublished = at('published');
+  const iFixStatus = at('fixStatus');
+  const iKaiStatus = at('kaiStatus');
+  const iRiskFactors = at('riskFactors');
+  const iLink = at('link');
+  const iGroup = at('group');
+  const iRepo = at('repo');
+  const iImage = at('image');
+
+  const decoded: Vulnerability[] = new Array(rows.length);
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const fixStatus = row[iFixStatus] as string;
+
+    decoded[i] = {
+      cve: row[iCve] as string,
+      severity: row[iSeverity] as SeverityKey,
+      cvss: row[iCvss] as number,
+      packageName: row[iPackageName] as string,
+      packageVersion: row[iPackageVersion] as string,
+      packageType: row[iPackageType] as string,
+      published: row[iPublished] as string,
+      fixStatus,
+      // Not stored — it is exactly this expression for every record.
+      hasFix: fixStatus.startsWith('fixed'),
+      kaiStatus: row[iKaiStatus] as KaiStatus,
+      riskFactors: row[iRiskFactors] as string[],
+      link: row[iLink] as string,
+      group: row[iGroup] as string,
+      repo: row[iRepo] as string,
+      image: row[iImage] as string,
+    };
+  }
+
+  return decoded;
+};
+
 export const VulnerabilityContext = createContext<VulnerabilityContextType | undefined>(undefined);
 
 export function VulnerabilityProvider({ children }: { children: ReactNode }) {
@@ -56,8 +132,6 @@ export function VulnerabilityProvider({ children }: { children: ReactNode }) {
       try {
         const [indexUrl, metaUrl] = dataUrls();
 
-        // Two independent files, so request them together rather than waiting
-        // for the 6.65MB index before even starting the 20KB meta.
         const [indexRes, metaRes] = await Promise.all([
           fetch(indexUrl, { signal: controller.signal }),
           fetch(metaUrl, { signal: controller.signal }),
@@ -70,11 +144,6 @@ export function VulnerabilityProvider({ children }: { children: ReactNode }) {
           throw new Error(`${metaRes.status} - could not load scan metadata`);
         }
 
-        // A missing file does not necessarily 404. This dev server, and most SPA
-        // hosts, answer unknown paths with index.html and a 200 so client-side
-        // routing works — so the status check above passes and `.json()` then
-        // fails on '<!DOCTYPE'. Checking the content type turns that into a
-        // sentence that says what actually went wrong.
         if (!isJson(indexRes)) {
           throw new Error('Vulnerability data is missing or was not deployed');
         }
@@ -82,13 +151,11 @@ export function VulnerabilityProvider({ children }: { children: ReactNode }) {
           throw new Error('Scan metadata is missing or was not deployed');
         }
 
-        const [records, scanMeta] = await Promise.all([indexRes.json(), metaRes.json()]);
+        const [payload, scanMeta] = await Promise.all([indexRes.json(), metaRes.json()]);
 
-        setData(records);
+        setData(decodeIndex(payload));
         setMeta(scanMeta);
       } catch (err) {
-        // This run was superseded — its failure is expected and its result
-        // unwanted, so it must not touch state the live run now owns.
         if (controller.signal.aborted) return;
 
         if (err instanceof Error) {

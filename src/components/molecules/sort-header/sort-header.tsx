@@ -46,7 +46,7 @@ export default function SortHeader({
       <th
         scope="col"
         className={cn(
-          'text-caption text-muted px-3 py-2.5 font-sans font-semibold uppercase',
+          'text-caption text-muted px-6 py-2.5 font-sans font-semibold uppercase',
           align === 'right' ? 'text-right' : 'text-left',
           className
         )}
@@ -60,7 +60,7 @@ export default function SortHeader({
     <th
       scope="col"
       aria-sort={isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-      className={cn('px-3 py-2.5', align === 'right' ? 'text-right' : 'text-left', className)}
+      className={cn('px-6 py-2.5', align === 'right' ? 'text-right' : 'text-left', className)}
     >
       <button
         type="button"

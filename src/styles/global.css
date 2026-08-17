@@ -109,6 +109,29 @@
     box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
   }
 
+  /*
+   * Sticky table header.
+   *
+   * Opaque, and it has to be. The obvious approach — translucent plus
+   * `backdrop-filter` — does not survive here for two reasons: backdrop filters
+   * on `<th>` are unreliable, and this header sits inside a `.glass` card that
+   * already has one. An ancestor backdrop filter creates a backdrop root, and
+   * nested filters inside it are inconsistent across browsers; Chrome drops them
+   * outright. The result is a see-through header with rows legible behind the
+   * labels.
+   *
+   * So the colour is the card surface computed by hand: the page colour with the
+   * card's 8% white already composited in, plus a few points more to separate
+   * the band from the rows. Same hue as everything around it — it reads as part
+   * of the surface rather than as a tinted stripe.
+   *
+   * Set on the cells rather than the row: a `<tr>` background paints behind cell
+   * backgrounds, so the rows would show through at the column seams.
+   */
+  .surface-header > th {
+    background-color: rgb(36 37 94);
+  }
+
   /* Ambient colour clouds that sit beneath the glass plates. */
   .glow {
     position: absolute;

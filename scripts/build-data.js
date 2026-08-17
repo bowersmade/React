@@ -6,14 +6,23 @@
  * scan export once and writes small, purpose-built artifacts the browser can
  * actually fetch:
  *
- *   public/data/index.json         one record per vulnerability, only the
- *                                  fields the list and filters need
+ *   public/data/index.json         { fields, rows } — one row per vulnerability
  *   public/data/descriptions.json  CVE -> description, deduplicated
  *   public/data/meta.json          the scanned group and repo lists
  *
  * The split is by access pattern, not by page. Descriptions are ~29% of the
  * source file but are only ever read one record at a time, so they are kept
  * out of the main payload.
+ *
+ * index.json is positional rather than an array of objects. Repeating 14 key
+ * names on every one of 236,656 records costs ~37MB — a third of the payload,
+ * and enough on its own to push the file past GitHub's 100MiB file limit. The
+ * names are written once into `fields`; each row is the values in that order.
+ * The reader derives its column positions from `fields` rather than hardcoding
+ * them, so reordering this list cannot silently mismap the data.
+ *
+ * `hasFix` is not stored. It is exactly `fixStatus.startsWith('fixed')` for all
+ * 236,656 records, so it is derived on read instead of shipped.
  *
  * meta.json deliberately carries no totals — every number on the dashboard
  * responds to the active filters, so it has to be counted from the in-scope
@@ -30,6 +39,24 @@ const path = require('path');
 
 const SOURCE = path.join(__dirname, '..', 'data', 'ui_demo.json');
 const OUT_DIR = path.join(__dirname, '..', 'public', 'data');
+
+/** Column order for index.json. Every row must match this exactly. */
+const FIELDS = [
+  'cve',
+  'severity',
+  'cvss',
+  'packageName',
+  'packageVersion',
+  'packageType',
+  'published',
+  'fixStatus',
+  'kaiStatus',
+  'riskFactors',
+  'link',
+  'group',
+  'repo',
+  'image',
+];
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(2)} MB`;
 
@@ -79,28 +106,27 @@ function main() {
         for (const vuln of image.vulnerabilities ?? []) {
           const severity = vuln.severity ?? 'low';
           const published = (vuln.published ?? '').slice(0, 10);
-          const hasFix = (vuln.status ?? '').startsWith('fixed');
 
-          records.push({
-            cve: vuln.cve ?? '',
+          // Values only, in FIELDS order.
+          records.push([
+            vuln.cve ?? '',
             severity,
-            cvss: vuln.cvss ?? 0,
-            packageName: vuln.packageName ?? '',
-            packageVersion: vuln.packageVersion ?? '',
-            packageType: vuln.packageType ?? '',
+            vuln.cvss ?? 0,
+            vuln.packageName ?? '',
+            vuln.packageVersion ?? '',
+            vuln.packageType ?? '',
             published,
-            fixStatus: vuln.status ?? '',
-            hasFix,
+            vuln.status ?? '',
             // '' when the finding has not been reviewed at all.
-            kaiStatus: vuln.kaiStatus ?? '',
+            vuln.kaiStatus ?? '',
             // riskFactors arrives as an object keyed by label with empty {}
             // values — effectively a serialised Set. Flatten to a plain array.
-            riskFactors: Object.keys(vuln.riskFactors ?? {}),
-            link: vuln.link ?? '',
-            group: groupName,
-            repo: repoName,
-            image: imageName,
-          });
+            Object.keys(vuln.riskFactors ?? {}),
+            vuln.link ?? '',
+            groupName,
+            repoName,
+            imageName,
+          ]);
 
           if (vuln.cve && vuln.description && !descriptions[vuln.cve]) {
             descriptions[vuln.cve] = vuln.description;
@@ -122,7 +148,7 @@ function main() {
   };
 
   console.log('Writing…');
-  write('index.json', records);
+  write('index.json', { fields: FIELDS, rows: records });
   write('descriptions.json', descriptions);
   write('meta.json', meta);
 

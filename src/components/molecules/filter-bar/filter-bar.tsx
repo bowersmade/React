@@ -1,6 +1,5 @@
 import { SlidersHorizontal } from 'lucide-react';
 import Chip from '../../atoms/chip/chip';
-import Button from '../../atoms/button/button';
 import { Typography } from '../../foundations/typography/typography';
 import { cn } from '../../../utils/cn';
 
@@ -19,29 +18,26 @@ export interface FilterBarProps {
   onClear: () => void;
   /** Opens the filter modal. Omit to hide the button. */
   onAddFilter?: () => void;
-  /** Findings matching the current filters, shown on the right. */
-  resultCount?: number;
-  /** Total before filtering, for the "of N" half. */
-  totalCount?: number;
   className?: string;
 }
 
 /**
- * Horizontal strip of applied filters above the table.
+ * The strip of applied filters above the feed.
  *
  * Its job is answering "why am I seeing these rows" at a glance, so it always
- * occupies its slot — an empty bar with the Add filter button is more useful
- * than a control that appears and disappears, which would shift the table.
+ * occupies its slot — a bar that appeared and disappeared would shift the table
+ * underneath it every time the last filter came off.
  *
- * Clear all only renders when there is something to clear.
+ * Add Filter carries a count badge so the number of active filters is legible
+ * even when the chips overflow, and Clear All sits at the far right, away from
+ * the individual remove buttons — destructive-ish actions should not be adjacent
+ * to the ones they resemble.
  */
 export default function FilterBar({
   filters,
   onRemove,
   onClear,
   onAddFilter,
-  resultCount,
-  totalCount,
   className = '',
 }: FilterBarProps) {
   const hasFilters = filters.length > 0;
@@ -49,12 +45,29 @@ export default function FilterBar({
   return (
     <div
       data-testid="sn-filter-bar"
-      className={cn('flex flex-wrap items-center gap-2', className)}
+      className={cn(
+        'glass rounded-pill flex flex-wrap items-center gap-2 px-2 py-2 pr-4',
+        className
+      )}
     >
       {onAddFilter ? (
-        <Button size="sm" icon={SlidersHorizontal} onClick={onAddFilter}>
-          {hasFilters ? 'Edit filters' : 'Add filters'}
-        </Button>
+        <>
+          <button
+            type="button"
+            onClick={onAddFilter}
+            className="rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page text-body-sm text-primary flex shrink-0 items-center gap-2 bg-white/[0.08] px-3.5 py-1.5 font-sans font-medium transition-colors duration-150 hover:bg-white/[0.14] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+            Add Filter
+            {hasFilters ? (
+              <span className="bg-accent text-page text-caption flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-semibold">
+                {filters.length}
+              </span>
+            ) : null}
+          </button>
+
+          <span className="bg-line mx-1 h-6 w-px shrink-0" aria-hidden="true" />
+        </>
       ) : null}
 
       {hasFilters ? (
@@ -68,29 +81,19 @@ export default function FilterBar({
           />
         ))
       ) : (
-        <Typography size="body-sm" color="muted">
+        <Typography size="body-sm" color="muted" className="px-1">
           No filters applied — showing everything.
         </Typography>
       )}
 
       {hasFilters ? (
-        <Button size="sm" variant="ghost" onClick={onClear}>
-          Clear all
-        </Button>
-      ) : null}
-
-      {resultCount !== undefined ? (
-        <Typography size="body-sm" color="muted" className="ml-auto shrink-0">
-          {/*
-            aria-live so the count is announced when filters change. Removing a
-            chip is otherwise a silent change for a screen reader user — the row
-            they were reading simply becomes a different row.
-          */}
-          <span aria-live="polite">
-            <span className="text-primary font-medium">{resultCount.toLocaleString()}</span>
-            {totalCount !== undefined ? ` of ${totalCount.toLocaleString()}` : ''} findings
-          </span>
-        </Typography>
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-body-sm text-secondary hover:text-primary focus-visible:ring-accent ml-auto shrink-0 rounded-sm px-1 font-sans font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
+        >
+          Clear All Filters
+        </button>
       ) : null}
     </div>
   );

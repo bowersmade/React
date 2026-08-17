@@ -692,8 +692,6 @@ export default function Sandbox() {
             onRemove={(id) => setDemoFilters((prev) => prev.filter((f) => f.id !== id))}
             onClear={() => setDemoFilters([])}
             onAddFilter={() => setFilterModalOpen(true)}
-            resultCount={12483}
-            totalCount={236656}
           />
         </Section>
 

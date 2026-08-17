@@ -43,7 +43,7 @@ export default function SeverityBadge({
     <span
       data-testid="sn-severity-badge"
       className={cn(
-        'text-caption inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 font-sans font-medium',
+        'text-caption rounded-pill inline-flex items-center gap-1.5 border px-2.5 py-1 font-sans font-medium',
         chip,
         className
       )}

@@ -9,166 +9,56 @@ import RiskVectors from '../components/organisms/risk-vectors/risk-vectors';
 import { useVulnerabilities } from '../context/vulnerabilitiesContext';
 import {
   buildTrendAnalysis,
-  filterData,
   groupRepoOptions,
   rankRiskVectors,
   reviewCount,
   severityCount,
 } from '../utils/helpers/aggregate';
-import { useDeferredValue, useMemo } from 'react';
+import { useMemo } from 'react';
 import { DASHBOARD_TREND_MONTHS } from '../utils/types/data';
 import { useFilters } from '../utils/hooks/useFilters';
-import { cn } from '../utils/cn';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-/**
- * `part` expressed as a percentage of `total`, e.g. (1773, 236656) -> 0.749.
- * Returns the raw number; callers round it. Zero total returns 0 rather than
- * NaN, which is what 0/0 gives and what would render during the initial load.
- */
 const percentOf = (part: number, total: number) => (total ? (part / total) * 100 : 0);
 
-/**
- * Months of history shown on the dashboard chart.
- *
- * The dataset spans 118 months, back to 2015. Plotted whole in this card the
- * line is an unreadable smear and the axis drops most of its labels, so the
- * glance view takes the recent window and the Trend Analysis page gets the
- * full history.
- *
- * This slices the last N months *present in the data*, not the last N calendar
- * months — a gap month simply is not a key, so a quiet period shifts the window
- * further back rather than leaving a hole.
- */
-
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { data: vulnerabilites, meta, isLoading } = useVulnerabilities();
   const { group, repo, hideManuallyCleared, hideAiCleared, setFilter, toggleFilter } = useFilters();
 
-  /**
-   * Recomputing everything below costs a few hundred milliseconds over 236k
-   * records, and React cannot paint while it runs — so a toggle appeared frozen
-   * until the whole chain finished.
-   *
-   * Deferring the filter values splits that in two. The controls read the live
-   * values and respond on the next frame; the expensive work reads the deferred
-   * ones and lands when it lands, at a priority React will interrupt if the user
-   * clicks again. The numbers are briefly one interaction behind, which `isStale`
-   * makes visible rather than hiding.
-   */
-  const dGroup = useDeferredValue(group);
-  const dRepo = useDeferredValue(repo);
-  const dHideManuallyCleared = useDeferredValue(hideManuallyCleared);
-  const dHideAiCleared = useDeferredValue(hideAiCleared);
-
-  const isStale =
-    dGroup !== group ||
-    dRepo !== repo ||
-    dHideManuallyCleared !== hideManuallyCleared ||
-    dHideAiCleared !== hideAiCleared;
-
-  // ── Filtered sets ─────────────────────────────────────────────────────────
-  // Two stages on purpose.
-  //
-  // `inScope` applies only group and repo. It is what the review toggles
-  // describe: a button reading "hides 4,211" has to count the findings it would
-  // remove, which is impossible once it has already removed them. Counting on
-  // the fully filtered set makes an active toggle report zero hidden while it
-  // is busy hiding thousands.
-  //
-  // `filtered` is everything, and drives the charts and metrics.
-  const inScope = useMemo(
-    () =>
-      filterData(vulnerabilites, {
-        group: dGroup,
-        repo: dRepo,
-        hideManuallyCleared: false,
-        hideAiCleared: false,
-      }),
-    [vulnerabilites, dGroup, dRepo]
-  );
-
-  const filtered = useMemo(
-    () =>
-      filterData(inScope, {
-        group: null,
-        repo: null,
-        hideManuallyCleared: dHideManuallyCleared,
-        hideAiCleared: dHideAiCleared,
-      }),
-    [inScope, dHideManuallyCleared, dHideAiCleared]
-  );
-
-  // ── Derived ───────────────────────────────────────────────────────────────
   const trendData = useMemo(
-    () => buildTrendAnalysis(filtered).slice(-DASHBOARD_TREND_MONTHS),
-    [filtered]
+    () => buildTrendAnalysis(vulnerabilites).slice(-DASHBOARD_TREND_MONTHS),
+    [vulnerabilites]
   );
 
-  const severityCountData = useMemo(() => severityCount(filtered), [filtered]);
+  const severityCountData = useMemo(() => severityCount(vulnerabilites), [vulnerabilites]);
 
-  const riskFactors = useMemo(() => rankRiskVectors(filtered), [filtered]);
+  const riskFactors = useMemo(() => rankRiskVectors(vulnerabilites), [vulnerabilites]);
 
-  // Scope options describe what picking a scope would show, so they count the
-  // fully filtered set — the toggles apply to them like everything else.
-  const { groups, repos } = useMemo(() => groupRepoOptions(filtered, meta), [filtered, meta]);
+  const { groups, repos } = useMemo(
+    () => groupRepoOptions(vulnerabilites, meta),
+    [vulnerabilites, meta]
+  );
 
-  // Counted before the toggles, per the note above.
-  const { aiCleared, manuallyCleared } = useMemo(() => reviewCount(inScope), [inScope]);
+  const { aiCleared, manuallyCleared } = useMemo(
+    () => reviewCount(vulnerabilites),
+    [vulnerabilites]
+  );
 
-  /**
-   * Distinct images carrying at least one finding in the current scope.
-   *
-   * Built with a Set rather than `new Set(inScope.map(...))` so there is no
-   * intermediate array of 236k strings to allocate and discard.
-   *
-   * Note this counts images *affected*, not images *scanned* — an image with no
-   * findings has no records, so it cannot appear here. Unfiltered that is 1,025
-   * against meta's 1,030 scanned, the difference being five clean images. The
-   * label says "affected" for that reason.
-   */
-  const affectedImages = useMemo(() => {
-    const seen = new Set<string>();
-    for (const vul of inScope) seen.add(vul.image);
-    return seen.size;
-  }, [inScope]);
+  const total = vulnerabilites.length;
 
-  const total = filtered.length;
-  const scopeTotal = inScope.length;
-  const cleared = aiCleared + manuallyCleared;
-
-  // ── Navigation ────────────────────────────────────────────────────────────
-  // const navigate = useNavigate();
-  // const goToList = (params: string) => navigate(`/vulnerabilities?${params}`);
+  const goToList = () => navigate({ pathname: '/vulnerabilities', search: location.search });
 
   return (
     <>
-      {/*
-        Metrics and charts dim while a filter change is still being computed.
-        The controls below stay at full strength because they respond
-        immediately — the dimming marks what is behind, not what is disabled.
-      */}
-      <section
-        aria-busy={isStale}
-        className={cn(
-          'grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-4',
-          isStale && 'opacity-50'
-        )}
-      >
+      <section className="grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-4">
         <MetricTile
           label="Total Vulnerabilities"
           value={total.toLocaleString()}
-          // Unscoped, the denominator is meaningful: 1,025 of 1,030 images carry
-          // findings, so five are clean. Scoped, that denominator is the whole
-          // estate rather than the group's, so mixing the two scales would read
-          // as "23 of 1,030" and invite the wrong comparison.
-          detail={
-            dGroup || dRepo
-              ? `across ${affectedImages.toLocaleString()} images`
-              : `across ${affectedImages.toLocaleString()} of ${meta.imageCount.toLocaleString()} images`
-          }
           icon={ShieldAlert}
           loading={isLoading}
-          // onClick={() => goToList('')}
+          onClick={goToList}
         />
         <MetricTile
           label="Critical"
@@ -177,7 +67,7 @@ export default function Dashboard() {
           tone="critical"
           progress={percentOf(severityCountData.critical, total)}
           loading={isLoading}
-          // onClick={() => goToList('severity=critical')}
+          onClick={goToList}
         />
         <MetricTile
           label="High Severity"
@@ -186,25 +76,20 @@ export default function Dashboard() {
           tone="high"
           progress={percentOf(severityCountData.high, total)}
           loading={isLoading}
-          // onClick={() => goToList('severity=high')}
+          onClick={goToList}
         />
-        {/*
-          Measured against the scope, not the filtered set — hiding the cleared
-          findings should not make the review progress read 0%.
-        */}
         <MetricTile
           label="Cleared by Review"
-          value={`${percentOf(cleared, scopeTotal).toFixed(1)}%`}
-          detail={`${cleared.toLocaleString()} of ${scopeTotal.toLocaleString()} dismissed`}
+          value={`${percentOf(aiCleared + manuallyCleared, total).toFixed(1)}%`}
+          detail={`${(aiCleared + manuallyCleared).toLocaleString()} of ${total.toLocaleString()} dismissed`}
           icon={Database}
           tone="info"
-          progress={percentOf(cleared, scopeTotal)}
+          progress={percentOf(aiCleared + manuallyCleared, total)}
           loading={isLoading}
-          // onClick={() => goToList('reviewed=true')}
+          onClick={goToList}
         />
       </section>
 
-      {/* Controls — scope on the left, the two spec-required toggles on the right. */}
       <section className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="grid w-full max-w-lg grid-cols-1 gap-4 sm:grid-cols-2">
           <ScopeSelect
@@ -244,11 +129,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Charts */}
-      <section
-        aria-busy={isStale}
-        className={cn('mt-6 space-y-4 transition-opacity duration-200', isStale && 'opacity-50')}
-      >
+      <section className="mt-6 space-y-4 transition-opacity duration-200">
         <TrendChart
           data={trendData}
           subtitle={`New findings by severity — last ${DASHBOARD_TREND_MONTHS} months`}

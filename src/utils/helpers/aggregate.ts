@@ -8,6 +8,7 @@ import {
   Filters,
 } from '../types/data';
 
+// Gets the count of every severity from vulnerability data
 export const severityCount = (data: Vulnerability[]): Record<SeverityKey, number> => {
   const count = {
     critical: 0,
@@ -25,6 +26,10 @@ export const severityCount = (data: Vulnerability[]): Record<SeverityKey, number
   return count;
 };
 
+/**
+ * Loops the list of data and grabs a count of the four vulnerabilities for each month and
+ * then sorts them
+ */
 export const buildTrendAnalysis = (data: Vulnerability[]): TrendPoint[] => {
   const trends: Record<string, Record<SeverityKey, number>> = {};
 
@@ -46,11 +51,7 @@ export const buildTrendAnalysis = (data: Vulnerability[]): TrendPoint[] => {
 };
 
 /**
- * Shared tail of `groupRepoOptions`: a name -> count tally becomes the option
- * shape ScopeSelect renders. Biggest scopes first — the control has its own
- * search field, so alphabetical order would waste the default view.
- *
- * Not exported; nothing outside this file needs it.
+ * This is just a function for converting the groupRepoOptions into the correct format
  */
 const toScopeOptions = (tally: Record<string, number>): ScopeOption[] =>
   Object.entries(tally)
@@ -58,16 +59,10 @@ const toScopeOptions = (tally: Record<string, number>): ScopeOption[] =>
     .sort((a, b) => b.count - a.count);
 
 /**
- * Options for the two scope selectors.
- *
- * `meta` supplies which scopes exist; `data` supplies the counts. Seeding from
- * meta means a scope that was scanned but matches nothing right now still
- * appears, at zero — "scanned, all clear" and "never scanned" are different
- * answers and an absent row merges them. Three groups and repos in this dataset
- * have no findings at all and would otherwise be invisible.
- *
- * Pass the *filtered* records so the counts describe what selecting a scope
- * would actually show.
+ * Loops through data and meta, meta is grabbing all the groups and repos to start them at 0
+ * then we loop data to fill those groups and repos with a count. If we just looped the data
+ * there would be items in it that don't appear due to the flattening that occurred during the
+ * VulnerbilitiesProvider hook
  */
 export const groupRepoOptions = (
   data: Vulnerability[],
@@ -91,11 +86,7 @@ export const groupRepoOptions = (
 };
 
 /**
- * Risk factor labels ranked by how often they appear. Every label is returned;
- * RiskVectors truncates to its own `limit`.
- *
- * Nested loop — each record carries a short `riskFactors` array, averaging
- * about four entries.
+ * Loops the data to grab the riskFactor count and then sorts them
  */
 export const rankRiskVectors = (data: Vulnerability[]): { label: string; count: number }[] => {
   const tally: Record<string, number> = {};
@@ -112,13 +103,7 @@ export const rankRiskVectors = (data: Vulnerability[]): { label: string; count: 
 };
 
 /**
- * How many findings each dismissal verdict accounts for. Unreviewed findings
- * are not tracked — that count is the remainder, `total - the two below`.
- *
- * The switch stays exhaustive so a new verdict in the source data breaks the
- * build here rather than being silently absorbed into a catch-all branch. At
- * runtime it only warns — the parsed JSON is `any`, so an unexpected value is a
- * data problem, and losing one record from a tally beats losing the page.
+ * This loops the data to get the count for a-invalid-norisk and invalid-norisk
  */
 export const reviewCount = (data: Vulnerability[]): ReviewCount => {
   const count = {
@@ -147,6 +132,10 @@ export const reviewCount = (data: Vulnerability[]): ReviewCount => {
   return count;
 };
 
+/**
+ * This filter works backwards, instead of filtering every item individually we use one loop
+ * and use a !== condition to leave out or keep an item
+ */
 export const filterData = (data: Vulnerability[], filters: Filters): Vulnerability[] => {
   const { group, repo, hideAiCleared, hideManuallyCleared } = filters;
 
