@@ -25,8 +25,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Header and page content share one container so they align. */}
       <div className="relative mx-auto max-w-[1440px] p-10">
         <AppHeader
-          hasNotifications
-          // onSearchClick={() => setSearchOpen(true)}
+        // onSearchClick={() => setSearchOpen(true)}
         />
         <main className="mt-8">
           {error ? (

@@ -1,12 +1,10 @@
-import { Bell, Search, ShieldCheck } from 'lucide-react';
+import { Search, ShieldCheck } from 'lucide-react';
 import { Typography } from '../../foundations/typography/typography';
 import { cn } from '../../../utils/cn';
 
 export interface AppHeaderProps {
   /** Shown in the search field before the user types. */
   searchPlaceholder?: string;
-  /** True when there are unread notifications. */
-  hasNotifications?: boolean;
   userName?: string;
   userRole?: string;
   /** Opens the command palette. Wire to search state. */
@@ -16,7 +14,6 @@ export interface AppHeaderProps {
 
 export default function AppHeader({
   searchPlaceholder = 'Search 236k+ findings by CVE, package name, or image…',
-  hasNotifications = false,
   userName = 'Devon S.',
   userRole = 'SEC-LEAD',
   onSearchClick,
@@ -53,17 +50,6 @@ export default function AppHeader({
       </button>
 
       <div className="flex shrink-0 items-center gap-3">
-        <button
-          type="button"
-          aria-label={hasNotifications ? 'Notifications, unread' : 'Notifications'}
-          className="glass focus-visible:ring-accent focus-visible:ring-offset-page text-secondary hover:text-primary relative flex h-10 w-10 items-center justify-center rounded-md transition-colors duration-150 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-        >
-          <Bell size={18} aria-hidden="true" />
-          {hasNotifications ? (
-            <span className="bg-accent absolute top-2.5 right-2.5 h-2 w-2 rounded-full" />
-          ) : null}
-        </button>
-
         <div className="flex items-center gap-2.5">
           <span className="bg-info/40 text-primary text-body-sm flex h-10 w-10 items-center justify-center rounded-md font-semibold">
             {userName.charAt(0)}
