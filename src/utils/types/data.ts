@@ -9,6 +9,8 @@ export const severityOrder = ['critical', 'high', 'medium', 'low'] as const;
 
 export type SeverityKey = (typeof severityOrder)[number];
 
+export const DASHBOARD_TREND_MONTHS = 12;
+
 /** One finding: a CVE as it appears in one scanned container image. */
 export interface Vulnerability {
   cve: string;
@@ -45,4 +47,20 @@ export interface ScanMeta {
   groups: Record<string, number>;
   repos: Record<string, number>;
   imageCount: number;
+}
+
+/**
+ * Findings dismissed during review, split by who dismissed them. Unreviewed is
+ * not tracked — it is whatever is left over, `total - manuallyCleared - aiCleared`.
+ */
+export interface ReviewCount {
+  manuallyCleared: number;
+  aiCleared: number;
+}
+
+export interface Filters {
+  group: string | null;
+  repo: string | null;
+  hideManuallyCleared: boolean;
+  hideAiCleared: boolean;
 }

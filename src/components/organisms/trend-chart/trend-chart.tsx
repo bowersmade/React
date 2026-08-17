@@ -22,6 +22,8 @@ import { severityOrder, SeverityKey, TrendPoint } from '../../../utils/types/dat
 
 export interface TrendChartProps {
   data: TrendPoint[];
+  /** Overrides the default line under the title — say so when the range is clipped. */
+  subtitle?: string;
   loading?: boolean;
   className?: string;
 }
@@ -39,7 +41,12 @@ function formatCount(value: number) {
   return String(value);
 }
 
-export default function TrendChart({ data, loading = false, className = '' }: TrendChartProps) {
+export default function TrendChart({
+  data,
+  subtitle = 'New findings identified per month, by severity',
+  loading = false,
+  className = '',
+}: TrendChartProps) {
   const [hidden, setHidden] = useState<string[]>([]);
 
   const visible = useMemo(() => severityOrder.filter((key) => !hidden.includes(key)), [hidden]);
@@ -64,7 +71,7 @@ export default function TrendChart({ data, loading = false, className = '' }: Tr
   return (
     <ChartCard
       title="Vulnerability Trend"
-      subtitle="New findings identified per month, by severity"
+      subtitle={subtitle}
       bodyHeight={340}
       loading={loading}
       empty={data.length === 0}

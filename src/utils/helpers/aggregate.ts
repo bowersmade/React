@@ -1,5 +1,12 @@
 import { ScopeOption } from '../../components/molecules/scope-select/scope-select';
-import { ScanMeta, SeverityKey, TrendPoint, Vulnerability } from '../types/data';
+import {
+  ScanMeta,
+  ReviewCount,
+  SeverityKey,
+  TrendPoint,
+  Vulnerability,
+  Filters,
+} from '../types/data';
 
 export const severityCount = (data: Vulnerability[]): Record<SeverityKey, number> => {
   const count = {
@@ -102,4 +109,53 @@ export const rankRiskVectors = (data: Vulnerability[]): { label: string; count: 
   return Object.entries(tally)
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
+};
+
+/**
+ * How many findings each dismissal verdict accounts for. Unreviewed findings
+ * are not tracked — that count is the remainder, `total - the two below`.
+ *
+ * The switch stays exhaustive so a new verdict in the source data breaks the
+ * build here rather than being silently absorbed into a catch-all branch. At
+ * runtime it only warns — the parsed JSON is `any`, so an unexpected value is a
+ * data problem, and losing one record from a tally beats losing the page.
+ */
+export const reviewCount = (data: Vulnerability[]): ReviewCount => {
+  const count = {
+    manuallyCleared: 0,
+    aiCleared: 0,
+  };
+
+  for (const vul of data) {
+    switch (vul.kaiStatus) {
+      case 'ai-invalid-norisk':
+        count.aiCleared += 1;
+        break;
+      case 'invalid - norisk':
+        count.manuallyCleared += 1;
+        break;
+      case '':
+        // Unreviewed — deliberately not counted.
+        break;
+      default: {
+        const unexpected: never = vul.kaiStatus;
+        console.warn(`Unknown kaiStatus, not counted: ${unexpected}`);
+      }
+    }
+  }
+
+  return count;
+};
+
+export const filterData = (data: Vulnerability[], filters: Filters): Vulnerability[] => {
+  const { group, repo, hideAiCleared, hideManuallyCleared } = filters;
+
+  if (!group && !repo && !hideManuallyCleared && !hideAiCleared) return data;
+  return data.filter((v) => {
+    if (group && v.group !== group) return false;
+    if (repo && v.repo !== repo) return false;
+    if (hideManuallyCleared && v.kaiStatus === 'invalid - norisk') return false;
+    if (hideAiCleared && v.kaiStatus === 'ai-invalid-norisk') return false;
+    return true;
+  });
 };

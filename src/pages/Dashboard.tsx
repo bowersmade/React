@@ -11,34 +11,42 @@ import {
   buildTrendAnalysis,
   groupRepoOptions,
   rankRiskVectors,
+  reviewCount,
   severityCount,
 } from '../utils/helpers/aggregate';
 import { useMemo } from 'react';
+import { DASHBOARD_TREND_MONTHS } from '../utils/types/data';
 
-// ── Still static ────────────────────────────────────────────────────────────
-// Everything here depends on a kaiStatus tally that has not been written yet:
-// how many findings each toggle would hide, and the share already dismissed.
-// One more aggregate over `kaiStatus` replaces all four.
-const METRICS = {
-  cleared: '12.3%',
-  clearedDetail: '29,005 of 236,656 dismissed',
-  clearedPercent: 12.3,
-};
+/**
+ * `part` expressed as a percentage of `total`, e.g. (1773, 236656) -> 0.749.
+ * Returns the raw number; callers round it. Zero total returns 0 rather than
+ * NaN, which is what 0/0 gives and what would render during the initial load.
+ */
+const percentOf = (part: number, total: number) => (total ? (part / total) * 100 : 0);
 
-const HIDDEN_MANUAL = 17046;
-const HIDDEN_AI = 11959;
-// ────────────────────────────────────────────────────────────────────────────
-
-/** Share of `total`, as a rounded percentage. Guards the empty-data case. */
-const share = (part: number, total: number) => (total ? (part / total) * 100 : 0);
+/**
+ * Months of history shown on the dashboard chart.
+ *
+ * The dataset spans 118 months, back to 2015. Plotted whole in this card the
+ * line is an unreadable smear and the axis drops most of its labels, so the
+ * glance view takes the recent window and the Trend Analysis page gets the
+ * full history.
+ *
+ * This slices the last N months *present in the data*, not the last N calendar
+ * months — a gap month simply is not a key, so a quiet period shifts the window
+ * further back rather than leaving a hole.
+ */
 
 export default function Dashboard() {
-  const { data: vulnerabilites, meta, error, isLoading } = useVulnerabilities();
+  const { data: vulnerabilites, meta, isLoading } = useVulnerabilities();
 
   // ── Derived ───────────────────────────────────────────────────────────────
   // Each runs one pass over the records. Once filters land, swap `vulnerabilites`
   // for the filtered array and everything below follows automatically.
-  const trendData = useMemo(() => buildTrendAnalysis(vulnerabilites), [vulnerabilites]);
+  const trendData = useMemo(
+    () => buildTrendAnalysis(vulnerabilites).slice(-DASHBOARD_TREND_MONTHS),
+    [vulnerabilites]
+  );
 
   const severityCountData = useMemo(() => severityCount(vulnerabilites), [vulnerabilites]);
 
@@ -49,7 +57,13 @@ export default function Dashboard() {
     [vulnerabilites, meta]
   );
 
+  const { aiCleared, manuallyCleared } = useMemo(
+    () => reviewCount(vulnerabilites),
+    [vulnerabilites]
+  );
+
   const total = vulnerabilites.length;
+  const cleared = aiCleared + manuallyCleared;
 
   // ── Navigation ────────────────────────────────────────────────────────────
   // const navigate = useNavigate();
@@ -70,29 +84,29 @@ export default function Dashboard() {
         <MetricTile
           label="Critical"
           value={severityCountData.critical.toLocaleString()}
-          detail={`${share(severityCountData.critical, total).toFixed(1)}% of total`}
+          detail={`${percentOf(severityCountData.critical, total).toFixed(1)}% of total`}
           tone="critical"
-          progress={share(severityCountData.critical, total)}
+          progress={percentOf(severityCountData.critical, total)}
           loading={isLoading}
           // onClick={() => goToList('severity=critical')}
         />
         <MetricTile
           label="High Severity"
           value={severityCountData.high.toLocaleString()}
-          detail={`${share(severityCountData.high, total).toFixed(1)}% of total`}
+          detail={`${percentOf(severityCountData.high, total).toFixed(1)}% of total`}
           tone="high"
-          progress={share(severityCountData.high, total)}
+          progress={percentOf(severityCountData.high, total)}
           loading={isLoading}
           // onClick={() => goToList('severity=high')}
         />
         <MetricTile
           label="Cleared by Review"
-          value={METRICS.cleared}
-          detail={METRICS.clearedDetail}
+          value={`${percentOf(cleared, total).toFixed(1)}%`}
+          detail={`${cleared.toLocaleString()} of ${total.toLocaleString()} dismissed`}
           icon={Database}
           tone="info"
-          progress={METRICS.clearedPercent}
-          // loading={loading}
+          progress={percentOf(cleared, total)}
+          loading={isLoading}
           // onClick={() => goToList('reviewed=true')}
         />
       </section>
@@ -127,7 +141,7 @@ export default function Dashboard() {
           <FilterToggle
             label="Analysis"
             icon={BarChart3}
-            hiddenCount={HIDDEN_MANUAL}
+            hiddenCount={manuallyCleared}
             active={false}
             onToggle={() => {}}
             // active={hideManuallyCleared}
@@ -136,7 +150,7 @@ export default function Dashboard() {
           <FilterToggle
             label="AI Analysis"
             icon={Sparkles}
-            hiddenCount={HIDDEN_AI}
+            hiddenCount={aiCleared}
             active={false}
             onToggle={() => {}}
             // active={hideAiCleared}
@@ -147,7 +161,11 @@ export default function Dashboard() {
 
       {/* Charts */}
       <section className="mt-6 space-y-4">
-        <TrendChart data={trendData} loading={isLoading} />
+        <TrendChart
+          data={trendData}
+          subtitle={`New findings by severity — last ${DASHBOARD_TREND_MONTHS} months`}
+          loading={isLoading}
+        />
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <SeverityDonut counts={severityCountData} loading={isLoading} />

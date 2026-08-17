@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react';
 import AppHeader from '../organisms/app-header/app-header';
+import StateMessage from '../molecules/state-message/state-message';
+import { useVulnerabilities } from '../../context/vulnerabilitiesContext';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const { error } = useVulnerabilities();
+
   return (
     <div className="bg-page relative min-h-screen">
       {/*
@@ -24,7 +28,20 @@ export default function Layout({ children }: LayoutProps) {
           hasNotifications
           // onSearchClick={() => setSearchOpen(true)}
         />
-        <main className="mt-8">{children}</main>
+        <main className="mt-8">
+          {error ? (
+            <StateMessage
+              variant="error"
+              title="Couldn't load vulnerability data"
+              description={
+                error ||
+                'The request failed without a reason given. Check your connection and try again.'
+              }
+            />
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );
