@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Combobox,
@@ -39,29 +39,73 @@ const ALL = '__all__';
 
 /**
  * Tracks the trigger's viewport position so the portalled panel can sit
- * directly beneath it. Recalculated on scroll and resize.
+ * directly beneath it.
+ *
+ * The first measurement runs in a layout effect, before the browser paints, so
+ * the panel appears already positioned rather than flashing at 0,0.
  */
-function useAnchorRect(ref: React.RefObject<HTMLElement | null>, active: boolean) {
+function useAnchorRect(ref: React.RefObject<HTMLElement | null>) {
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   const measure = useCallback(() => {
     if (ref.current) setRect(ref.current.getBoundingClientRect());
   }, [ref]);
 
-  useEffect(() => {
-    if (!active) return;
+  useLayoutEffect(() => {
     measure();
+  }, [measure]);
 
+  useEffect(() => {
     window.addEventListener('scroll', measure, true);
     window.addEventListener('resize', measure);
     return () => {
       window.removeEventListener('scroll', measure, true);
       window.removeEventListener('resize', measure);
     };
-  }, [active, measure]);
+  }, [measure]);
 
   return rect;
 }
+
+/**
+ * The dropdown panel, portalled to <body>.
+ *
+ * Glass cards use backdrop-filter, which creates a stacking context — an inline
+ * panel would be painted over by any later sibling card regardless of z-index.
+ *
+ * This is a component rather than inline markup so the measuring hook can live
+ * inside it. Mirroring Headless UI's `open` into this component's state during
+ * render would be a state update inside another component's render pass.
+ */
+function AnchoredPanel({
+  anchorRef,
+  children,
+}: {
+  anchorRef: React.RefObject<HTMLElement | null>;
+  children: React.ReactNode;
+}) {
+  const rect = useAnchorRect(anchorRef);
+
+  if (!rect) return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: rect.bottom + 6,
+        left: rect.left,
+        width: rect.width,
+      }}
+      className="panel z-[100] overflow-hidden rounded-lg"
+    >
+      {children}
+    </div>,
+    document.body
+  );
+}
+
+const optionRow =
+  'flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-1.5 data-[focus]:bg-accent/15';
 
 export default function ScopeSelect({
   label,
@@ -75,20 +119,27 @@ export default function ScopeSelect({
   className = '',
 }: ScopeSelectProps) {
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
-  const rect = useAnchorRect(triggerRef, open);
 
-  const filtered = useMemo(() => {
+  const allOption = useMemo<ScopeOption>(() => ({ id: ALL, label: allLabel }), [allLabel]);
+
+  /**
+   * The reset option is the first entry of the list rather than separate markup
+   * above it. Virtualised options all come from this one array, so anything
+   * rendered outside it would not scroll with the rest.
+   */
+  const items = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((o) => o.label.toLowerCase().includes(q));
-  }, [options, query]);
+    const matches = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+    return [allOption, ...matches];
+  }, [options, query, allOption]);
 
-  const selected = value ? options.find((o) => o.id === value) : undefined;
+  const selected = useMemo(
+    () => (value ? (options.find((o) => o.id === value) ?? allOption) : allOption),
+    [value, options, allOption]
+  );
 
-  const optionRow =
-    'flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-1.5 data-[focus]:bg-accent/15';
+  const noMatches = items.length === 1 && query.trim().length > 0;
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
@@ -96,111 +147,87 @@ export default function ScopeSelect({
         {label}
       </Typography>
 
+      {/*
+        `virtual` mounts only the rows in view. The repository list runs to
+        several hundred options and Headless UI does per-option setup work, so
+        rendering them all locked the main thread for seconds on open.
+      */}
       <Combobox
-        value={value ?? ALL}
-        onChange={(next: string | null) => onChange(!next || next === ALL ? null : next)}
+        value={selected}
+        by="id"
+        onChange={(next: ScopeOption | null) =>
+          onChange(!next || next.id === ALL ? null : next.id)
+        }
         onClose={() => setQuery('')}
         disabled={disabled}
+        virtual={{ options: items }}
       >
-        {({ open: isOpen }) => {
-          // Keep local state in sync so the portal mounts/unmounts with the panel.
-          if (isOpen !== open) setOpen(isOpen);
+        {({ open: isOpen }) => (
+          <div ref={triggerRef} className="relative">
+            <ComboboxButton className="border-line focus-visible:ring-accent focus-visible:ring-offset-page flex w-full items-center justify-between gap-2 rounded-md border bg-white/[0.06] px-3 py-2 text-left transition-colors duration-150 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40">
+              <Typography
+                size={mono && selected.id !== ALL ? 'mono-sm' : 'body'}
+                color={selected.id !== ALL ? 'primary' : 'secondary'}
+                className="truncate"
+              >
+                {selected.label}
+              </Typography>
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className={cn(
+                  'text-muted shrink-0 transition-transform duration-150',
+                  isOpen && 'rotate-180'
+                )}
+              />
+            </ComboboxButton>
 
-          return (
-            <div ref={triggerRef} className="relative">
-              <ComboboxButton className="border-line focus-visible:ring-accent focus-visible:ring-offset-page flex w-full items-center justify-between gap-2 rounded-md border bg-white/[0.06] px-3 py-2 text-left transition-colors duration-150 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40">
-                <Typography
-                  size={mono && selected ? 'mono-sm' : 'body'}
-                  color={selected ? 'primary' : 'secondary'}
-                  className="truncate"
-                >
-                  {selected?.label ?? allLabel}
-                </Typography>
-                <ChevronDown
-                  size={16}
-                  aria-hidden="true"
-                  className={cn(
-                    'text-muted shrink-0 transition-transform duration-150',
-                    isOpen && 'rotate-180'
-                  )}
-                />
-              </ComboboxButton>
+            {isOpen ? (
+              <AnchoredPanel anchorRef={triggerRef}>
+                <div className="border-line flex items-center gap-2 border-b px-3 py-2">
+                  <Search size={14} className="text-muted shrink-0" aria-hidden="true" />
+                  <ComboboxInput
+                    autoFocus
+                    aria-label={`Search ${label.toLowerCase()}`}
+                    placeholder={searchPlaceholder}
+                    displayValue={() => query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="text-body text-primary placeholder:text-muted w-full bg-transparent py-0.5 font-sans focus:outline-none"
+                  />
+                </div>
 
-              {/*
-                Portalled to <body> so the panel escapes every ancestor stacking
-                context. Glass cards use backdrop-filter, which creates a
-                stacking context — an inline panel would be painted over by any
-                later sibling card no matter its z-index.
-              */}
-              {isOpen && rect
-                ? createPortal(
-                    <div
-                      style={{
-                        position: 'fixed',
-                        top: rect.bottom + 6,
-                        left: rect.left,
-                        width: rect.width,
-                      }}
-                      className="panel z-[100] overflow-hidden rounded-lg"
-                    >
-                      <div className="border-line flex items-center gap-2 border-b px-3 py-2">
-                        <Search size={14} className="text-muted shrink-0" aria-hidden="true" />
-                        <ComboboxInput
-                          autoFocus
-                          aria-label={`Search ${label.toLowerCase()}`}
-                          placeholder={searchPlaceholder}
-                          displayValue={() => query}
-                          onChange={(e) => setQuery(e.target.value)}
-                          className="text-body text-primary placeholder:text-muted w-full bg-transparent py-0.5 font-sans focus:outline-none"
-                        />
-                      </div>
-
-                      <ComboboxOptions
-                        static
-                        className="max-h-64 overflow-auto p-1 focus:outline-none"
+                <ComboboxOptions className="max-h-64 overflow-auto p-1 focus:outline-none">
+                  {({ option }: { option: ScopeOption }) => (
+                    <ComboboxOption value={option} className={optionRow}>
+                      <Typography
+                        size={mono && option.id !== ALL ? 'mono-sm' : 'body'}
+                        className="truncate"
                       >
-                        <ComboboxOption value={ALL} className={optionRow}>
-                          <Typography size="body">{allLabel}</Typography>
-                          {value === null ? (
-                            <Check size={14} className="text-accent shrink-0" aria-hidden="true" />
-                          ) : null}
-                        </ComboboxOption>
-
-                        {filtered.map((option) => (
-                          <ComboboxOption key={option.id} value={option.id} className={optionRow}>
-                            <Typography size={mono ? 'mono-sm' : 'body'} className="truncate">
-                              {option.label}
-                            </Typography>
-                            <span className="flex shrink-0 items-center gap-2">
-                              {option.count !== undefined ? (
-                                <Typography size="mono-sm" color="muted">
-                                  {option.count.toLocaleString()}
-                                </Typography>
-                              ) : null}
-                              {value === option.id ? (
-                                <Check size={14} className="text-accent" aria-hidden="true" />
-                              ) : null}
-                            </span>
-                          </ComboboxOption>
-                        ))}
-
-                        {filtered.length === 0 ? (
-                          <Typography
-                            size="body-sm"
-                            color="muted"
-                            className="block px-2 py-3 text-center"
-                          >
-                            No matches for “{query}”
+                        {option.label}
+                      </Typography>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {option.count !== undefined ? (
+                          <Typography size="mono-sm" color="muted">
+                            {option.count.toLocaleString()}
                           </Typography>
                         ) : null}
-                      </ComboboxOptions>
-                    </div>,
-                    document.body
-                  )
-                : null}
-            </div>
-          );
-        }}
+                        {selected.id === option.id ? (
+                          <Check size={14} className="text-accent" aria-hidden="true" />
+                        ) : null}
+                      </span>
+                    </ComboboxOption>
+                  )}
+                </ComboboxOptions>
+
+                {noMatches ? (
+                  <Typography size="body-sm" color="muted" className="block px-2 py-3 text-center">
+                    No matches for “{query}”
+                  </Typography>
+                ) : null}
+              </AnchoredPanel>
+            ) : null}
+          </div>
+        )}
       </Combobox>
     </div>
   );

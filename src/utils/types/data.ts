@@ -13,6 +13,14 @@ export const DASHBOARD_TREND_MONTHS = 12;
 
 /** One finding: a CVE as it appears in one scanned container image. */
 export interface Vulnerability {
+  /**
+   * Assigned by the loader: the record's position in index.json.
+   *
+   * The dataset has no natural key. One image can carry the same CVE through
+   * several packages, so cve + image collides on 43,089 rows, and 3 records are
+   * identical across every field there is. Identity has to be given, not derived.
+   */
+  id: number;
   cve: string;
   severity: SeverityKey;
   cvss: number;
@@ -46,6 +54,12 @@ export interface TrendPoint {
 export interface ScanMeta {
   groups: Record<string, number>;
   repos: Record<string, number>;
+  /**
+   * Group -> the repositories scanned under it. A repository name can appear
+   * under more than one group (13 do), so this cannot be inverted to a single
+   * repo -> group map.
+   */
+  groupRepos: Record<string, string[]>;
   imageCount: number;
 }
 

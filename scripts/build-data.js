@@ -8,7 +8,8 @@
  *
  *   public/data/index.json         { fields, rows } — one row per vulnerability
  *   public/data/descriptions.json  CVE -> description, deduplicated
- *   public/data/meta.json          the scanned group and repo lists
+ *   public/data/meta.json          the scanned group and repo lists, plus
+ *                                  which repositories belong to which group
  *
  * The split is by access pattern, not by page. Descriptions are ~29% of the
  * source file but are only ever read one record at a time, so they are kept
@@ -89,15 +90,17 @@ function main() {
 
   // Seeded on entering each node in the source tree, so scopes with no findings
   // still appear — with a count of 0.
-  const meta = { groups: {}, repos: {}, imageCount: 0 };
+  const meta = { groups: {}, repos: {}, groupRepos: {}, imageCount: 0 };
 
   console.log('Transforming…');
 
   for (const [groupName, group] of Object.entries(raw.groups ?? {})) {
     meta.groups[groupName] = meta.groups[groupName] ?? 0;
+    meta.groupRepos[groupName] = meta.groupRepos[groupName] ?? [];
 
     for (const [repoName, repo] of Object.entries(group.repos ?? {})) {
       meta.repos[repoName] = meta.repos[repoName] ?? 0;
+      meta.groupRepos[groupName].push(repoName);
 
       for (const [imageVersion, image] of Object.entries(repo.images ?? {})) {
         const imageName = image.name ?? `${repoName}:${imageVersion}`;

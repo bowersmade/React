@@ -10,7 +10,7 @@ export type VulnerabilityContextType = {
 };
 
 /** Shape consumers see before the fetch resolves. */
-const EMPTY_META: ScanMeta = { groups: {}, repos: {}, imageCount: 0 };
+const EMPTY_META: ScanMeta = { groups: {}, repos: {}, groupRepos: {}, imageCount: 0 };
 
 const DATA_URL = '/data/index.json';
 const META_URL = '/data/meta.json';
@@ -92,6 +92,7 @@ const decodeIndex = (payload: EncodedIndex): Vulnerability[] => {
     const fixStatus = row[iFixStatus] as string;
 
     decoded[i] = {
+      id: i,
       cve: row[iCve] as string,
       severity: row[iSeverity] as SeverityKey,
       cvss: row[iCvss] as number,

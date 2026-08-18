@@ -9,15 +9,18 @@ import RiskVectors from '../components/organisms/risk-vectors/risk-vectors';
 import { useVulnerabilities } from '../context/vulnerabilitiesContext';
 import {
   buildTrendAnalysis,
-  groupRepoOptions,
+  filterData,
+  groupOptions,
+  repoOptions,
   rankRiskVectors,
   reviewCount,
   severityCount,
 } from '../utils/helpers/aggregate';
-import { useMemo } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import { DASHBOARD_TREND_MONTHS } from '../utils/types/data';
 import { useFilters } from '../utils/hooks/useFilters';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { cn } from '../utils/cn';
 
 const percentOf = (part: number, total: number) => (total ? (part / total) * 100 : 0);
 
@@ -27,35 +30,89 @@ export default function Dashboard() {
   const { data: vulnerabilites, meta, isLoading } = useVulnerabilities();
   const { group, repo, hideManuallyCleared, hideAiCleared, setFilter, toggleFilter } = useFilters();
 
+  const deferredGroup = useDeferredValue(group);
+  const deferredRepo = useDeferredValue(repo);
+  const deferredHideManuallyCleared = useDeferredValue(hideManuallyCleared);
+  const deferredHideAiCleared = useDeferredValue(hideAiCleared);
+
+  const isStale =
+    deferredGroup !== group ||
+    deferredRepo !== repo ||
+    deferredHideManuallyCleared !== hideManuallyCleared ||
+    deferredHideAiCleared !== hideAiCleared;
+
+  /**
+   * Scoped applies the group and repo filters but leaves the toggles alone.
+    We need it because the toggle buttons show how many findings they would hide,
+    and we can't get that count from data the toggle already removed, it would
+    always come back as 0. Visible takes scoped and applies the toggles on top.
+   */
+  const byGroup = useMemo(
+    () =>
+      filterData(vulnerabilites, {
+        group: deferredGroup,
+        repo: null,
+        hideManuallyCleared: false,
+        hideAiCleared: false,
+      }),
+    [vulnerabilites, deferredGroup]
+  );
+
+  const scoped = useMemo(
+    () =>
+      filterData(byGroup, {
+        group: null,
+        repo: deferredRepo,
+        hideManuallyCleared: false,
+        hideAiCleared: false,
+      }),
+    [byGroup, deferredRepo]
+  );
+  const visible = useMemo(
+    () =>
+      filterData(scoped, {
+        group: null,
+        repo: null,
+        hideManuallyCleared: deferredHideManuallyCleared,
+        hideAiCleared: deferredHideAiCleared,
+      }),
+    [deferredHideManuallyCleared, deferredHideAiCleared, scoped]
+  );
+
+  const total = visible.length;
+
   const trendData = useMemo(
-    () => buildTrendAnalysis(vulnerabilites).slice(-DASHBOARD_TREND_MONTHS),
-    [vulnerabilites]
+    () => buildTrendAnalysis(visible).slice(-DASHBOARD_TREND_MONTHS),
+    [visible]
   );
 
-  const severityCountData = useMemo(() => severityCount(vulnerabilites), [vulnerabilites]);
+  const severityCountData = useMemo(() => severityCount(visible), [visible]);
 
-  const riskFactors = useMemo(() => rankRiskVectors(vulnerabilites), [vulnerabilites]);
+  const riskFactors = useMemo(() => rankRiskVectors(visible), [visible]);
 
-  const { groups, repos } = useMemo(
-    () => groupRepoOptions(vulnerabilites, meta),
-    [vulnerabilites, meta]
+  const groups = useMemo(() => groupOptions(vulnerabilites, meta), [vulnerabilites, meta]);
+
+  const repos = useMemo(
+    () => repoOptions(byGroup, meta, deferredGroup),
+    [byGroup, meta, deferredGroup]
   );
 
-  const { aiCleared, manuallyCleared } = useMemo(
-    () => reviewCount(vulnerabilites),
-    [vulnerabilites]
-  );
-
-  const total = vulnerabilites.length;
+  const { aiCleared, manuallyCleared } = useMemo(() => reviewCount(scoped), [scoped]);
 
   const goToList = () => navigate({ pathname: '/vulnerabilities', search: location.search });
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-4">
+      <section
+        aria-busy={isStale}
+        className={cn(
+          'grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-4',
+          isStale && 'opacity-50'
+        )}
+      >
         <MetricTile
           label="Total Vulnerabilities"
-          value={total.toLocaleString()}
+          value={visible.length.toLocaleString()}
           icon={ShieldAlert}
           loading={isLoading}
           onClick={goToList}
@@ -80,11 +137,11 @@ export default function Dashboard() {
         />
         <MetricTile
           label="Cleared by Review"
-          value={`${percentOf(aiCleared + manuallyCleared, total).toFixed(1)}%`}
-          detail={`${(aiCleared + manuallyCleared).toLocaleString()} of ${total.toLocaleString()} dismissed`}
+          value={`${percentOf(aiCleared + manuallyCleared, scoped.length).toFixed(1)}%`}
+          detail={`${(aiCleared + manuallyCleared).toLocaleString()} of ${scoped.length.toLocaleString()} dismissed`}
           icon={Database}
           tone="info"
-          progress={percentOf(aiCleared + manuallyCleared, total)}
+          progress={percentOf(aiCleared + manuallyCleared, scoped.length)}
           loading={isLoading}
           onClick={goToList}
         />
@@ -129,7 +186,10 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="mt-6 space-y-4 transition-opacity duration-200">
+      <section
+        aria-busy={isStale}
+        className={cn('mt-6 space-y-4 transition-opacity duration-200', isStale && 'opacity-50')}
+      >
         <TrendChart
           data={trendData}
           subtitle={`New findings by severity — last ${DASHBOARD_TREND_MONTHS} months`}

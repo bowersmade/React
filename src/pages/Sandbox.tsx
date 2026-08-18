@@ -76,7 +76,7 @@ export default function Sandbox() {
   const [aiAnalysis, setAiAnalysis] = useState(true);
   const [checked, setChecked] = useState(true);
   const [query, setQuery] = useState('openssl');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [activeRow, setActiveRow] = useState<Vulnerability | null>(null);
   const [sortKey, setSortKey] = useState<string | null>('severity');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -104,6 +104,7 @@ export default function Sandbox() {
     const kaiStatuses: Vulnerability['kaiStatus'][] = ['', '', '', 'invalid - norisk', 'ai-invalid-norisk'];
 
     return Array.from({ length: 500 }, (_, i) => ({
+      id: i,
       cve: `CVE-2024-${String(10000 + i).slice(0, 5)}`,
       severity: severities[i % severities.length],
       cvss: Number((3 + (i % 70) / 10).toFixed(1)),
@@ -720,7 +721,7 @@ export default function Sandbox() {
             <VulnerabilityTable
               rows={demoRows}
               selectedIds={selectedIds}
-              activeId={activeRow ? `${activeRow.cve}::${activeRow.image}` : null}
+              activeId={activeRow ? activeRow.id : null}
               sortKey={sortKey}
               sortDirection={sortDirection}
               onSort={(key) => {
@@ -743,7 +744,7 @@ export default function Sandbox() {
                 setSelectedIds((prev) =>
                   prev.size === demoRows.length
                     ? new Set()
-                    : new Set(demoRows.map((r) => `${r.cve}::${r.image}`))
+                    : new Set(demoRows.map((r) => r.id))
                 )
               }
               onRowClick={setActiveRow}

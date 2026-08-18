@@ -51,7 +51,7 @@ export const buildTrendAnalysis = (data: Vulnerability[]): TrendPoint[] => {
 };
 
 /**
- * This is just a function for converting the groupRepoOptions into the correct format
+ * This is just a function for converting the groupOptions and repoOptions into the correct format
  */
 const toScopeOptions = (tally: Record<string, number>): ScopeOption[] =>
   Object.entries(tally)
@@ -64,25 +64,30 @@ const toScopeOptions = (tally: Record<string, number>): ScopeOption[] =>
  * there would be items in it that don't appear due to the flattening that occurred during the
  * VulnerbilitiesProvider hook
  */
-export const groupRepoOptions = (
-  data: Vulnerability[],
-  meta: ScanMeta
-): { groups: ScopeOption[]; repos: ScopeOption[] } => {
-  const groups: Record<string, number> = {};
-  const repos: Record<string, number> = {};
+export const groupOptions = (data: Vulnerability[], meta: ScanMeta): ScopeOption[] => {
+  const tally: Record<string, number> = {};
 
-  for (const name of Object.keys(meta.groups)) groups[name] = 0;
-  for (const name of Object.keys(meta.repos)) repos[name] = 0;
+  for (const name of Object.keys(meta.groups)) tally[name] = 0;
+  for (const vul of data) tally[vul.group] = (tally[vul.group] ?? 0) + 1;
+
+  return toScopeOptions(tally);
+};
+
+export const repoOptions = (
+  data: Vulnerability[],
+  meta: ScanMeta,
+  group: string | null
+): ScopeOption[] => {
+  const names = group ? (meta.groupRepos[group] ?? []) : Object.keys(meta.repos);
+
+  const tally: Record<string, number> = {};
+  for (const name of names) tally[name] = 0;
 
   for (const vul of data) {
-    groups[vul.group] = (groups[vul.group] ?? 0) + 1;
-    repos[vul.repo] = (repos[vul.repo] ?? 0) + 1;
+    if (tally[vul.repo] !== undefined) tally[vul.repo] += 1;
   }
 
-  return {
-    groups: toScopeOptions(groups),
-    repos: toScopeOptions(repos),
-  };
+  return toScopeOptions(tally);
 };
 
 /**

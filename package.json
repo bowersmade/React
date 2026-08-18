@@ -25,6 +25,10 @@
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
+  "overrides": {
+    "@react-aria/focus": "3.20.2",
+    "@react-aria/interactions": "3.25.0"
+  },
   "scripts": {
     "build:data": "node scripts/build-data.js",
     "start": "react-scripts start",
