@@ -83,10 +83,11 @@ export default function Sandbox() {
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterValue, setFilterValue] = useState<FilterModalValue>({
     severities: ['critical', 'high'],
-    riskFactors: [],
-    hasFixOnly: false,
+    hideUnreviewed: false,
     hideManuallyCleared: false,
     hideAiCleared: true,
+    from: null,
+    to: null,
   });
   const [demoFilters, setDemoFilters] = useState<AppliedFilter[]>([
     { id: 'severity', label: 'Severity', value: 'Critical, High' },
@@ -101,7 +102,13 @@ export default function Sandbox() {
   const demoRows = useMemo<Vulnerability[]>(() => {
     const severities: SeverityKey[] = ['critical', 'high', 'medium', 'low'];
     const packages = ['spring-web', 'openssl', 'libxml2', 'glibc', 'log4j-core', 'zlib'];
-    const kaiStatuses: Vulnerability['kaiStatus'][] = ['', '', '', 'invalid - norisk', 'ai-invalid-norisk'];
+    const kaiStatuses: Vulnerability['kaiStatus'][] = [
+      '',
+      '',
+      '',
+      'invalid - norisk',
+      'ai-invalid-norisk',
+    ];
 
     return Array.from({ length: 500 }, (_, i) => ({
       id: i,
@@ -115,7 +122,10 @@ export default function Sandbox() {
       fixStatus: i % 3 ? `fixed in ${2 + (i % 5)}.0.1` : 'affected',
       hasFix: i % 3 !== 0,
       kaiStatus: kaiStatuses[i % kaiStatuses.length],
-      riskFactors: ['Attack vector: network', 'Has fix', 'Attack complexity: low'].slice(0, (i % 3) + 1),
+      riskFactors: ['Attack vector: network', 'Has fix', 'Attack complexity: low'].slice(
+        0,
+        (i % 3) + 1
+      ),
       link: `https://nvd.nist.gov/vuln/detail/CVE-2024-${String(10000 + i).slice(0, 5)}`,
       group: '1389-ci-cd',
       repo: `app_${['uxgwrned-dg', 'crpfcofv', 'bdhuplqb'][i % 3]}`,
@@ -485,7 +495,12 @@ export default function Sandbox() {
             <Chip label="Severity" value="Critical" onRemove={() => {}} />
             <Chip label="Group" value="1389-ci-cd" onRemove={() => {}} />
             <Chip label="Repo" value="app_uxgwrned-dg" mono onRemove={() => {}} />
-            <Chip label="Risk" value="Exploit exists - in the wild" icon={Sparkles} onRemove={() => {}} />
+            <Chip
+              label="Risk"
+              value="Exploit exists - in the wild"
+              icon={Sparkles}
+              onRemove={() => {}}
+            />
           </Row>
           <Row label="Read-only — no remove button">
             <Chip value="Has fix" />
@@ -503,7 +518,9 @@ export default function Sandbox() {
           <Row label="Monospace — package types and versions">
             <Badge mono>jar</Badge>
             <Badge mono>npm</Badge>
-            <Badge mono tone="info">5.1.8.RELEASE</Badge>
+            <Badge mono tone="info">
+              5.1.8.RELEASE
+            </Badge>
           </Row>
         </Section>
 
@@ -676,7 +693,12 @@ export default function Sandbox() {
                       { id: 'a', label: 'CVE-2024-22262', kind: 'CVE', count: 412 },
                       { id: 'b', label: 'openssl', kind: 'Package', count: 3891 },
                       { id: 'c', label: 'openssl-libs', kind: 'Package', count: 1204 },
-                      { id: 'd', label: 'quay.example.priv/base-images/openssl:3.1', kind: 'Image', count: 88 },
+                      {
+                        id: 'd',
+                        label: 'quay.example.priv/base-images/openssl:3.1',
+                        kind: 'Image',
+                        count: 88,
+                      },
                     ]
                   : []
               }
@@ -742,9 +764,7 @@ export default function Sandbox() {
               }
               onToggleAll={() =>
                 setSelectedIds((prev) =>
-                  prev.size === demoRows.length
-                    ? new Set()
-                    : new Set(demoRows.map((r) => r.id))
+                  prev.size === demoRows.length ? new Set() : new Set(demoRows.map((r) => r.id))
                 )
               }
               onRowClick={setActiveRow}
@@ -780,14 +800,18 @@ export default function Sandbox() {
         onReset={() =>
           setFilterValue({
             severities: [],
-            riskFactors: [],
-            hasFixOnly: false,
+            hideUnreviewed: false,
             hideManuallyCleared: false,
             hideAiCleared: false,
+            from: null,
+            to: null,
           })
         }
-        riskFactorOptions={riskFactors.slice(0, 5)}
-        previewCount={12483}
+        severityCounts={{ critical: 1415, high: 8203, medium: 22140, low: 10118 }}
+        reviewCounts={{ unreviewed: 38204, manuallyCleared: 2891, aiCleared: 781 }}
+        minDate="2015-01-09"
+        maxDate="2025-01-31"
+        previewCount={41876}
       />
     </div>
   );

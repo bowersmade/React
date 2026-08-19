@@ -75,6 +75,10 @@ export interface ReviewCount {
 export interface Filters {
   group: string | null;
   repo: string | null;
+  severities: SeverityKey[];
   hideManuallyCleared: boolean;
   hideAiCleared: boolean;
+  hideUnreviewed: boolean;
+  from: string | null;
+  to: string | null;
 }

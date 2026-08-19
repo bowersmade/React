@@ -142,14 +142,31 @@ export const reviewCount = (data: Vulnerability[]): ReviewCount => {
  * and use a !== condition to leave out or keep an item
  */
 export const filterData = (data: Vulnerability[], filters: Filters): Vulnerability[] => {
-  const { group, repo, hideAiCleared, hideManuallyCleared } = filters;
+  const { group, repo, hideAiCleared, hideManuallyCleared, hideUnreviewed, severities, to, from } =
+    filters;
 
-  if (!group && !repo && !hideManuallyCleared && !hideAiCleared) return data;
+  if (
+    !group &&
+    !repo &&
+    !hideManuallyCleared &&
+    !hideAiCleared &&
+    !hideUnreviewed &&
+    !severities.length &&
+    !from &&
+    !to
+  ) {
+    return data;
+  }
   return data.filter((v) => {
     if (group && v.group !== group) return false;
     if (repo && v.repo !== repo) return false;
     if (hideManuallyCleared && v.kaiStatus === 'invalid - norisk') return false;
     if (hideAiCleared && v.kaiStatus === 'ai-invalid-norisk') return false;
+    if (hideUnreviewed && v.kaiStatus === '') return false;
+    if (severities.length && !severities.includes(v.severity)) return false;
+    if ((from || to) && v.published === '') return false;
+    if (from && v.published < from) return false;
+    if (to && v.published > to) return false;
     return true;
   });
 };

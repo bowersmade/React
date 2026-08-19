@@ -54,6 +54,10 @@ export default function Dashboard() {
         repo: null,
         hideManuallyCleared: false,
         hideAiCleared: false,
+        severities: [],
+        hideUnreviewed: false,
+        to: null,
+        from: null,
       }),
     [vulnerabilites, deferredGroup]
   );
@@ -65,6 +69,10 @@ export default function Dashboard() {
         repo: deferredRepo,
         hideManuallyCleared: false,
         hideAiCleared: false,
+        severities: [],
+        hideUnreviewed: false,
+        to: null,
+        from: null,
       }),
     [byGroup, deferredRepo]
   );
@@ -75,6 +83,10 @@ export default function Dashboard() {
         repo: null,
         hideManuallyCleared: deferredHideManuallyCleared,
         hideAiCleared: deferredHideAiCleared,
+        severities: [],
+        hideUnreviewed: false,
+        to: null,
+        from: null,
       }),
     [deferredHideManuallyCleared, deferredHideAiCleared, scoped]
   );
