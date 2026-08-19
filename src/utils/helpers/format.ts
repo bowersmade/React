@@ -59,6 +59,30 @@ export const fixStateClass: Record<FixState, string> = {
   none: 'text-critical',
 };
 
+/**
+ * Whitespace escapes that lost their backslash somewhere upstream.
+ *
+ * The advisory text in `ui_demo.json` contains the literal characters `u00a0`
+ * where a non-breaking space was meant — 1,438 occurrences in the source, so
+ * this happened before the data reached us and `build-data.js` copies the
+ * field through verbatim. Every code point listed here is a whitespace
+ * character, which is why substituting a plain space is safe: there is no
+ * reading where "Builderu00a0to" was intended.
+ *
+ * Deliberately narrow. A general `/u[0-9a-f]{4}/` sweep would also eat real
+ * words — `uccee` appears seven times in this dataset and is not an escape.
+ */
+const MANGLED_WHITESPACE = /u00a0|u0020|u2028|u2029/g;
+
+/**
+ * Makes advisory text safe to render: the broken escapes become spaces, and
+ * the runs of whitespace they leave behind collapse to one.
+ */
+export function cleanAdvisoryText(text: string): string {
+  if (!text) return '';
+  return text.replace(MANGLED_WHITESPACE, ' ').replace(/\s+/g, ' ').trim();
+}
+
 export const capitalizeFirstLetter = (str: string) => {
   if (!str) return ''; // Handle empty strings
   return str.charAt(0).toUpperCase() + str.slice(1);

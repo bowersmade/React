@@ -1,9 +1,14 @@
 import { createSelector } from '@reduxjs/toolkit';
 import { RootState } from '../../store/store';
+import { MAX_COMPARABLE } from './slice';
 
 export const selectSelectedIds = (state: RootState) => state.selection.ids;
 
 export const selectSelectedCount = (state: RootState) => state.selection.ids.length;
+
+/** At the cap — no further rows can be added until something is removed. */
+export const selectIsSelectionFull = (state: RootState) =>
+  state.selection.ids.length >= MAX_COMPARABLE;
 
 /**
  * The same ids as a Set.

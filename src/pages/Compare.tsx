@@ -14,8 +14,9 @@ import { Typography } from '../components/foundations/typography/typography';
 import { useVulnerabilities } from '../context/vulnerabilitiesContext';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectSelectedIds } from '../features/Selection/selectors';
-import { clearSelection, removeSelected } from '../features/Selection/slice';
+import { clearSelection, removeSelected, MAX_COMPARABLE } from '../features/Selection/slice';
 import { fixState } from '../utils/helpers/format';
+import { useDescriptions, type DescriptionMap } from '../utils/hooks/useDescriptions';
 import { cn } from '../utils/cn';
 import type { Vulnerability } from '../utils/types/data';
 
@@ -23,7 +24,7 @@ import type { Vulnerability } from '../utils/types/data';
  * Side-by-side comparison of findings selected on the list page.
  *
  * Four columns fit a normal window, which is why the design shows four — but
- * the list page does not cap the selection, so the layout has to survive ten.
+ * the selection runs to `MAX_COMPARABLE`, so the layout has to survive ten.
  * Rather than transposing into a different component past some threshold, the
  * columns keep a floor width and the panel scrolls sideways: one layout, one
  * set of code paths, and the fifth finding sits exactly where the fourth does
@@ -54,7 +55,12 @@ interface Attribute {
   render: (finding: Vulnerability) => React.ReactNode;
 }
 
-const ATTRIBUTES: Attribute[] = [
+/**
+ * Built per render rather than declared once, because the Description row needs
+ * the advisory text and that arrives asynchronously. Memoised by the caller on
+ * the same inputs, so the array identity is still stable between renders.
+ */
+const buildAttributes = (descriptions: DescriptionMap | null, loading: boolean): Attribute[] => [
   {
     label: 'CVE ID',
     compare: (f) => f.cve,
@@ -189,6 +195,31 @@ const ATTRIBUTES: Attribute[] = [
     ),
   },
   {
+    /**
+     * The one field that is not in the findings payload — it is keyed by CVE in
+     * a separate file, so it can still be arriving after everything else has
+     * rendered. `compare` reads the same text that is displayed, so two
+     * findings sharing a CVE correctly count as agreeing.
+     */
+    label: 'Description',
+    compare: (f) => descriptions?.[f.cve] ?? '',
+    render: (f) => {
+      const text = descriptions?.[f.cve];
+      if (text) {
+        return (
+          <Typography size="body-sm" color="secondary">
+            {text}
+          </Typography>
+        );
+      }
+      return (
+        <Typography size="body-sm" color="muted">
+          {loading ? 'Loading…' : 'No description recorded for this advisory.'}
+        </Typography>
+      );
+    },
+  },
+  {
     label: 'Reference',
     compare: (f) => f.link,
     render: (f) =>
@@ -224,6 +255,9 @@ export default function Compare() {
 
   const [differencesOnly, setDifferencesOnly] = useState(false);
 
+  // Always needed here — Description is one of the compared rows.
+  const { descriptions, isLoading: descriptionsLoading } = useDescriptions(true);
+
   /**
    * `id` is the record's position in the decoded array — the loader assigns it
    * that way — so each selected finding is one index lookup rather than a scan
@@ -233,6 +267,12 @@ export default function Compare() {
   const findings = useMemo(() => {
     const resolved: Vulnerability[] = [];
     for (const id of selectedIds) {
+      // Belt and braces. The slice already caps the selection, but this screen
+      // renders a column per finding and is where an uncapped list actually
+      // hurts — so it refuses to draw more than the cap regardless of what it
+      // is handed, including state that predates the cap.
+      if (resolved.length >= MAX_COMPARABLE) break;
+
       const candidate = vulnerabilites[id];
       if (candidate && candidate.id === id) resolved.push(candidate);
     }
@@ -241,13 +281,13 @@ export default function Compare() {
 
   const rows = useMemo(
     () =>
-      ATTRIBUTES.map((attribute) => ({
+      buildAttributes(descriptions, descriptionsLoading).map((attribute) => ({
         attribute,
         // One distinct value means every finding agrees; more is the thing the
         // user came here to see.
         differs: new Set(findings.map(attribute.compare)).size > 1,
       })),
-    [findings]
+    [findings, descriptions, descriptionsLoading]
   );
 
   const shownRows = differencesOnly ? rows.filter((row) => row.differs) : rows;
