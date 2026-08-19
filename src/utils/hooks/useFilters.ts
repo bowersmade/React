@@ -2,6 +2,8 @@ import { useCallback, useMemo, useTransition } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SeverityKey } from '../types/data';
 import type { FilterModalValue } from '../../components/organisms/filter-modal/filter-modal';
+import type { AppliedFilter } from '../../components/molecules/filter-bar/filter-bar';
+import { capitalizeFirstLetter } from '../helpers/format';
 
 /**
  * Filter state lives in the URL rather than in React state.
@@ -175,6 +177,63 @@ export function useFilters() {
     });
   }, [write]);
 
+  /**
+   * The active filters described as the chips `FilterBar` renders.
+   *
+   * This lives here rather than on a page because more than one screen shows
+   * the same bar, and — more importantly — the `id` a chip carries is the same
+   * string `removeFilter` below switches on. Keeping the two next to each other
+   * is what stops a new filter growing a chip that nothing can clear.
+   *
+   * Group and repo are deliberately absent. They are set from the dashboard's
+   * scope pickers, which already display their own state, so a chip would be a
+   * second control claiming to own the same value.
+   */
+  const appliedFilters = useMemo<AppliedFilter[]>(() => {
+    const applied: AppliedFilter[] = [];
+
+    if (hideManuallyCleared) {
+      applied.push({ id: 'hideManuallyCleared', label: 'Hiding', value: 'Manual Dismissed' });
+    }
+    if (hideAiCleared) {
+      applied.push({ id: 'hideAiCleared', label: 'Hiding', value: 'AI Dismissed' });
+    }
+    if (hideUnreviewed) {
+      applied.push({ id: 'hideUnreviewed', label: 'Hiding', value: 'Unreviewed' });
+    }
+
+    for (const severity of severities) {
+      applied.push({ id: severity, label: 'Severity', value: capitalizeFirstLetter(severity) });
+    }
+
+    if (from) applied.push({ id: 'from', label: 'Showing', value: `${from} and Above` });
+    if (to) applied.push({ id: 'to', label: 'Showing', value: `${to} and Below` });
+
+    return applied;
+  }, [from, hideAiCleared, hideManuallyCleared, hideUnreviewed, severities, to]);
+
+  /**
+   * Clears whichever filter a chip stands for. Anything not recognised as a
+   * flag, a scope or a date is a severity, which is the only id drawn from the
+   * value itself rather than a fixed key.
+   */
+  const removeFilter = useCallback(
+    (id: string) => {
+      if (id === 'hideManuallyCleared' || id === 'hideAiCleared' || id === 'hideUnreviewed') {
+        toggleFilter(id);
+      } else if (id === 'group' || id === 'repo') {
+        setFilter(id, null);
+      } else if (id === 'from') {
+        setDateRange(null, to);
+      } else if (id === 'to') {
+        setDateRange(from, null);
+      } else {
+        setSeverities(severities.filter((s) => s !== id));
+      }
+    },
+    [from, to, severities, toggleFilter, setFilter, setDateRange, setSeverities]
+  );
+
   return useMemo(
     () => ({
       group,
@@ -191,6 +250,8 @@ export function useFilters() {
       toggleFilter,
       applyModalFilters,
       clearFilters,
+      appliedFilters,
+      removeFilter,
       isApplyingFilters,
     }),
     [
@@ -208,6 +269,8 @@ export function useFilters() {
       toggleFilter,
       applyModalFilters,
       clearFilters,
+      appliedFilters,
+      removeFilter,
       isApplyingFilters,
     ]
   );

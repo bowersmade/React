@@ -28,10 +28,7 @@ const META_URL = '/data/meta.json';
 const isJson = (res: Response) => res.headers.get('content-type')?.includes('application/json');
 
 const dataUrls = () => {
-  if (
-    process.env.NODE_ENV === 'development' &&
-    new URLSearchParams(window.location.search).has('failData')
-  ) {
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('failData')) {
     return ['/data/does-not-exist.json', '/data/does-not-exist.json'];
   }
 

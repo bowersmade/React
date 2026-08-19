@@ -21,8 +21,8 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 /**
  * Design system playground at /sandbox. Lazy like everything else, so it costs
  * nothing to anyone who never opens it — but it does ship. If that bothers you,
- * gate the route on `process.env.NODE_ENV === 'development'` and the bundler
- * will drop the chunk from production entirely.
+ * gate the route on `import.meta.env.DEV` and the bundler will drop the chunk
+ * from production entirely.
  */
 const Sandbox = lazy(() => import('./pages/Sandbox'));
 

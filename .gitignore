@@ -23,3 +23,5 @@ yarn-debug.log*
 yarn-error.log*
 
 data/ui_demo.json
+# vite
+/_to_delete
