@@ -12,9 +12,9 @@ import SeverityBadge from '../components/atoms/severity-badge/severity-badge';
 import StateMessage from '../components/molecules/state-message/state-message';
 import { Typography } from '../components/foundations/typography/typography';
 import { useVulnerabilities } from '../context/vulnerabilitiesContext';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { selectSelectedIds } from '../features/Selection/selectors';
-import { clearSelection, removeSelected, MAX_COMPARABLE } from '../features/Selection/slice';
+import { useAppDispatch } from '../store/hooks';
+import { clearSelection, removeSelected } from '../features/Selection/slice';
+import { useSelectedFindings } from '../utils/hooks/useSelectedFindings';
 import { fixState } from '../utils/helpers/format';
 import { useDescriptions, type DescriptionMap } from '../utils/hooks/useDescriptions';
 import { cn } from '../utils/cn';
@@ -250,34 +250,15 @@ function sourceName(link: string): string {
 export default function Compare() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { data: vulnerabilites, isLoading } = useVulnerabilities();
-  const selectedIds = useAppSelector(selectSelectedIds);
 
   const [differencesOnly, setDifferencesOnly] = useState(false);
 
   // Always needed here — Description is one of the compared rows.
   const { descriptions, isLoading: descriptionsLoading } = useDescriptions(true);
 
-  /**
-   * `id` is the record's position in the decoded array — the loader assigns it
-   * that way — so each selected finding is one index lookup rather than a scan
-   * of 236k rows. The identity check keeps that honest: if the assumption ever
-   * stops holding, the row is skipped instead of showing the wrong CVE.
-   */
-  const findings = useMemo(() => {
-    const resolved: Vulnerability[] = [];
-    for (const id of selectedIds) {
-      // Belt and braces. The slice already caps the selection, but this screen
-      // renders a column per finding and is where an uncapped list actually
-      // hurts — so it refuses to draw more than the cap regardless of what it
-      // is handed, including state that predates the cap.
-      if (resolved.length >= MAX_COMPARABLE) break;
-
-      const candidate = vulnerabilites[id];
-      if (candidate && candidate.id === id) resolved.push(candidate);
-    }
-    return resolved;
-  }, [selectedIds, vulnerabilites]);
+  // Only for the loading gate — the findings themselves come from the hook.
+  const { isLoading } = useVulnerabilities();
+  const findings = useSelectedFindings();
 
   const rows = useMemo(
     () =>

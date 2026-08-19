@@ -49,7 +49,15 @@ type EncodedIndex = {
  *
  * Column positions are read from `fields` rather than hardcoded, so reordering
  * the producer's list cannot silently shift every value into the wrong
- * property — a mismatch throws here instead of rendering nonsense.
+ * property. That only covers half of it, though: `fields` and `rows` are two
+ * separately hand-maintained lists in build-data.js, and nothing stops them
+ * drifting apart from each other. Two failure modes are guarded against here —
+ * a column name that no longer exists (`at()`, below) and a row that doesn't
+ * carry as many values as `fields` claims it should (the length check in the
+ * loop) — and either throws here instead of rendering nonsense. What is not,
+ * and cannot be, guarded against: a row of the *correct* length whose values
+ * are simply in the wrong order. Nothing here can tell a package name sitting
+ * where a CVE id belongs from a real one — both are just strings.
  */
 const decodeIndex = (payload: EncodedIndex): Vulnerability[] => {
   const fields = payload?.fields;
@@ -86,6 +94,19 @@ const decodeIndex = (payload: EncodedIndex): Vulnerability[] => {
 
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
+
+    // `at()` only proves a column's *name* is in `fields` — it says nothing
+    // about whether this particular row has a value for it. If `fields` and
+    // a row were edited out of step with each other, this is where it shows:
+    // not as a bad value, but as a row that is the wrong length. Catch it
+    // here, once per row, instead of letting a short row silently shift
+    // every field after the gap into its neighbour's slot.
+    if (row.length !== fields.length) {
+      throw new Error(
+        `Vulnerability data row ${i} has ${row.length} values but "fields" lists ${fields.length} columns.`
+      );
+    }
+
     const fixStatus = row[iFixStatus] as string;
 
     decoded[i] = {

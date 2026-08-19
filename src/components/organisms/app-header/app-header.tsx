@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Search, ShieldCheck } from 'lucide-react';
 import { Typography } from '../../foundations/typography/typography';
 import { cn } from '../../../utils/cn';
@@ -21,14 +22,25 @@ export default function AppHeader({
 }: AppHeaderProps) {
   return (
     <header className={cn('flex items-center gap-6', className)}>
-      <div className="flex shrink-0 items-center gap-3">
+      {/*
+        A real link rather than a button with a navigate handler, so the logo
+        behaves the way every other logo does: middle-click and ⌘-click open a
+        new tab, right-click offers Copy Link Address, and the status bar shows
+        where it goes on hover. `Link` keeps the navigation client-side, so none
+        of that costs a reload of the 5MB dataset.
+      */}
+      <Link
+        to="/"
+        aria-label="Sentinel — go to the dashboard"
+        className="rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page flex shrink-0 items-center gap-3 transition-opacity duration-150 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      >
         <span className="glass text-accent flex h-10 w-10 items-center justify-center rounded-md">
           <ShieldCheck size={20} aria-hidden="true" />
         </span>
         <Typography size="h2" as="span">
           SENTINEL
         </Typography>
-      </div>
+      </Link>
 
       <button
         type="button"

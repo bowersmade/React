@@ -17,8 +17,10 @@ export interface Vulnerability {
    * Assigned by the loader: the record's position in index.json.
    *
    * The dataset has no natural key. One image can carry the same CVE through
-   * several packages, so cve + image collides on 43,089 rows, and 3 records are
-   * identical across every field there is. Identity has to be given, not derived.
+   * several packages, so cve + image collides on 43,089 of 236,656 rows. Even
+   * the closest near-duplicates — the 3 pairs that also match on package and
+   * version — still differ in fixStatus, so there is no true duplicate row to
+   * fall back on either. Identity has to be given, not derived.
    */
   id: number;
   cve: string;
