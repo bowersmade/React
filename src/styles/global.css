@@ -132,6 +132,51 @@
     background-color: rgb(36 37 94);
   }
 
+  /*
+   * Opaque fill for a column pinned with `position: sticky`. Same colour as the
+   * sticky header above, and pinned for the same reason it has to be opaque: a
+   * translucent sticky cell shows the very content it is meant to stay in front
+   * of sliding underneath it.
+   */
+  .surface-sticky {
+    background-color: rgb(36 37 94);
+  }
+
+  /*
+   * The same fill with the 3% white tint that marks a differing row already
+   * composited in. The tint cannot simply be layered on top: the pinned cell
+   * needs one opaque colour, and `bg-white/[0.03]` over an opaque base is a
+   * different colour from the same tint over the translucent card behind the
+   * scrolling columns.
+   */
+  .surface-sticky-differs {
+    background-color: rgb(43 44 99);
+  }
+
+  /*
+   * Scrolls sideways without a visible scrollbar. For strips that overflow by
+   * design — a row of filter chips — where a permanent gutter would eat into a
+   * control only a few pixels taller than its contents.
+   */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /*
+   * Softens the trailing edge of a strip that scrolls sideways, so a chip cut
+   * off by the boundary reads as "there is more" rather than as a rendering
+   * fault. Costs nothing when the strip does not overflow — the faded band is
+   * empty in that case.
+   */
+  .fade-edge-right {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+
   /* Ambient colour clouds that sit beneath the glass plates. */
   .glow {
     position: absolute;

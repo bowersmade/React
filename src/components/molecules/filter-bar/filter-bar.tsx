@@ -45,10 +45,7 @@ export default function FilterBar({
   return (
     <div
       data-testid="sn-filter-bar"
-      className={cn(
-        'glass rounded-pill flex flex-wrap items-center gap-2 px-2 py-2 pr-4',
-        className
-      )}
+      className={cn('glass rounded-pill flex items-center gap-2 px-2 py-2 pr-4', className)}
     >
       {onAddFilter ? (
         <>
@@ -70,18 +67,33 @@ export default function FilterBar({
         </>
       ) : null}
 
+      {/*
+        The chips scroll sideways rather than wrapping.
+
+        A pill is only a pill at one line tall — let the chips wrap and the
+        radius stops tracking the edges, the bar grows a second row, and the
+        controls at either end drift away from the strip they belong to. Since
+        the number of filters is unbounded (every severity is its own chip), the
+        overflow has to go somewhere, and sideways is the direction that keeps
+        the shape. `min-w-0` is what actually permits it: a flex child defaults
+        to `min-width: auto` and would otherwise refuse to shrink below its
+        content, pushing the buttons off the end instead of scrolling.
+      */}
       {hasFilters ? (
-        filters.map((filter) => (
-          <Chip
-            key={filter.id}
-            label={filter.label}
-            value={filter.value}
-            mono={filter.mono}
-            onRemove={() => onRemove(filter.id)}
-          />
-        ))
+        <div className="scrollbar-none fade-edge-right flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+          {filters.map((filter) => (
+            <Chip
+              key={filter.id}
+              label={filter.label}
+              value={filter.value}
+              mono={filter.mono}
+              onRemove={() => onRemove(filter.id)}
+              className="max-w-[280px] shrink-0"
+            />
+          ))}
+        </div>
       ) : (
-        <Typography size="body-sm" color="muted" className="px-1">
+        <Typography size="body-sm" color="muted" className="min-w-0 flex-1 px-1">
           No filters applied — showing everything.
         </Typography>
       )}
@@ -90,7 +102,7 @@ export default function FilterBar({
         <button
           type="button"
           onClick={onClear}
-          className="text-body-sm text-secondary hover:text-primary focus-visible:ring-accent ml-auto shrink-0 rounded-sm px-1 font-sans font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
+          className="text-body-sm text-secondary hover:text-primary focus-visible:ring-accent shrink-0 rounded-sm px-1 font-sans font-medium whitespace-nowrap transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
         >
           Clear All Filters
         </button>

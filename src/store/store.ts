@@ -1,9 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 
+import { selectionKey, selectionReducer } from '../features/Selection/slice';
+
 export const store = configureStore({
   reducer: {
-    // Slices go here — e.g. the global filter slice (kaiStatus toggles, group/repo scope).
+    [selectionKey]: selectionReducer,
   },
+  devTools: !import.meta.env.PROD,
 });
 
 export type RootState = ReturnType<typeof store.getState>;
