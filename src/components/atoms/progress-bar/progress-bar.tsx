@@ -44,7 +44,7 @@ export default function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label}
-      className={cn('w-full overflow-hidden rounded-full bg-white/10', sizeMap[size], className)}
+      className={cn('w-full overflow-hidden rounded-full bg-tint/10', sizeMap[size], className)}
     >
       <div
         className={cn('h-full rounded-full transition-[width] duration-300', toneMap[tone])}

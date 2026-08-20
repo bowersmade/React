@@ -3,10 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
 const variantMap = {
-  primary: 'bg-accent text-page hover:bg-accent/90 active:bg-accent/80 border border-transparent font-semibold',
-  secondary: 'glass text-primary hover:bg-white/[0.14] active:bg-white/[0.1]',
-  ghost: 'bg-transparent text-secondary border border-transparent hover:bg-white/[0.06] hover:text-primary',
-  danger: 'bg-critical text-white hover:bg-critical/90 active:bg-critical/80 border border-transparent',
+  primary:
+    'bg-accent text-page hover:bg-accent/90 active:bg-accent/80 border border-transparent font-semibold',
+  secondary: 'glass text-primary hover:bg-tint/[0.14] active:bg-tint/[0.1]',
+  ghost:
+    'bg-transparent text-secondary border border-transparent hover:bg-tint/[0.06] hover:text-primary',
+  danger:
+    'bg-critical text-white hover:bg-critical/90 active:bg-critical/80 border border-transparent',
 } as const;
 
 const sizeMap = {

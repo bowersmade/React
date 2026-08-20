@@ -52,7 +52,7 @@ export default function FilterBar({
           <button
             type="button"
             onClick={onAddFilter}
-            className="rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page text-body-sm text-primary flex shrink-0 items-center gap-2 bg-white/[0.08] px-3.5 py-1.5 font-sans font-medium transition-colors duration-150 hover:bg-white/[0.14] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page text-body-sm text-primary flex shrink-0 items-center gap-2 bg-tint/[0.08] px-3.5 py-1.5 font-sans font-medium transition-colors duration-150 hover:bg-tint/[0.14] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <SlidersHorizontal size={14} aria-hidden="true" />
             Add Filter

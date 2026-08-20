@@ -47,10 +47,7 @@ export default function ChartLegend({
 
         const content = (
           <>
-            <span
-              className={cn('h-2 w-2 shrink-0 rounded-full', item.color)}
-              aria-hidden="true"
-            />
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', item.color)} aria-hidden="true" />
             <Typography size="body-sm" color={isHidden ? 'disabled' : 'secondary'}>
               {item.label}
               {item.percent !== undefined ? ` (${item.percent.toFixed(1)}%)` : ''}
@@ -77,8 +74,8 @@ export default function ChartLegend({
                 className={cn(
                   'rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page flex w-full items-center gap-2 border px-3 py-1.5 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                   isHidden
-                    ? 'border-transparent bg-white/[0.03] opacity-60'
-                    : 'border-line bg-white/[0.06] hover:bg-white/[0.1]'
+                    ? 'border-transparent bg-tint/[0.03] opacity-60'
+                    : 'border-line bg-tint/[0.06] hover:bg-tint/[0.1]'
                 )}
               >
                 {content}

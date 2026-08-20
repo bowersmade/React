@@ -6,6 +6,8 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
+
     /* Neutrals — dark theme */
     --color-page: 8 9 67; /* #080943 */
     --color-text-primary: 255 255 255; /* #FFFFFF */
@@ -13,7 +15,9 @@
     --color-text-muted: 156 164 192; /* #9CA4C0 */
     --color-text-disabled: 132 132 132; /* #848484 */
 
-    /* Severity */
+    /* Severity — identical in both themes; verified against the light-mode
+       Figma design, which reuses these exact values rather than a lighter
+       or darker variant. */
     --color-critical: 220 38 38; /* #DC2626 */
     --color-high: 249 115 22; /* #F97316 */
     --color-medium: 217 119 6; /* #D97706 */
@@ -25,10 +29,50 @@
     --color-accent: 0 191 255; /* #00BFFF */
     --color-teal: 138 240 227; /* #8AF0E3 */
 
-    /* Glass surfaces — white at low alpha over the dark page */
+    /*
+     * The base colour every translucent "glass" surface tints against.
+     * White at low alpha over the dark page in dark mode; every `bg-tint/[X]`
+     * and `border-tint/[X]` utility in the app resolves through this one
+     * variable, so the whole glass-surface system flips with a single value
+     * instead of touching each of the ~20 components that use it.
+     */
+    --tint: 255 255 255;
+
+    /* Glass surfaces — tint at low alpha over the page */
     --surface-1: 255 255 255 / 0.08;
     --surface-2: 255 255 255 / 0.14;
     --surface-line: 255 255 255 / 0.1;
+  }
+
+  /*
+   * Light theme. Colour values verified against the Figma light-mode design
+   * (node 96:4) rather than guessed by inverting the dark palette — several
+   * values are NOT a straight opacity flip: `--color-accent` and
+   * `--color-resolved` both get their own slightly different light-mode
+   * shade for contrast against a white background, where the neon dark-mode
+   * values would read as washed out.
+   */
+  [data-theme='light'] {
+    color-scheme: light;
+
+    --color-page: 248 250 252; /* #F8FAFC — the lighter stop of the design's page gradient, see body below */
+    --color-text-primary: 8 9 67; /* #080943 — the dark theme's page colour, now doing double duty as ink */
+    --color-text-secondary: 71 85 105; /* #475569 */
+    --color-text-muted: 100 116 139; /* #64748B */
+    --color-text-disabled: 148 163 184; /* #94A3B8 */
+
+    --color-resolved: 16 185 129; /* #10B981 — lighter than the dark theme's #16A34A, for contrast on white */
+    --color-accent: 0 153 221; /* #0099DD — a darker step of the dark theme's #00BFFF; the neon value is too low-contrast on white */
+
+    /* The tint every glass surface composites against is now the brand navy
+       instead of white — same opacity scale throughout the app, flipped base
+       colour. This one variable is what makes the ~20-component sweep to
+       `bg-tint`/`border-tint` pay off: nothing else has to change per theme. */
+    --tint: 8 9 67;
+
+    --surface-1: 8 9 67 / 0.06;
+    --surface-2: 8 9 67 / 0.1;
+    --surface-line: 8 9 67 / 0.1;
   }
 
   body {
@@ -39,11 +83,19 @@
     color: rgb(var(--color-text-primary));
   }
 
+  /* The design's page background is a soft gradient, not a flat fill —
+     applied on top of the flat `--color-page` fallback above rather than
+     replacing it, so anything that reads `--color-page` directly (e.g. a
+     canvas or SVG that can't use a CSS gradient) still gets a sane colour. */
+  [data-theme='light'] body {
+    background-image: linear-gradient(to bottom, #f8fafc, #edf2f7);
+  }
+
   /* The OS default is a light track, which reads as a white slab against the
      dark page — most obvious inside the virtualised table, which always scrolls. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+    scrollbar-color: rgb(var(--tint) / 0.2) transparent;
   }
 
   *::-webkit-scrollbar {
@@ -56,14 +108,14 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: rgb(255 255 255 / 0.18);
+    background-color: rgb(var(--tint) / 0.18);
     border: 2px solid transparent;
     background-clip: content-box;
     border-radius: 99px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(255 255 255 / 0.3);
+    background-color: rgb(var(--tint) / 0.3);
   }
 
   *::-webkit-scrollbar-corner {
@@ -87,6 +139,12 @@
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
   }
 
+  [data-theme='light'] .glass-2 {
+    /* A dark-tuned 25%-black shadow reads as a heavy grey smudge on a white
+       card — lightened and given the same navy tint as everything else. */
+    box-shadow: 0 8px 24px rgb(8 9 67 / 0.08);
+  }
+
   /*
    * Menus, dropdowns and popovers. Unlike the display-only glass levels these
    * sit over arbitrary content, so the fill is near-opaque — text behind a
@@ -101,12 +159,23 @@
       0 2px 8px rgb(0 0 0 / 0.3);
   }
 
+  [data-theme='light'] .panel {
+    background-color: rgb(255 255 255);
+    box-shadow:
+      0 12px 32px rgb(8 9 67 / 0.12),
+      0 2px 8px rgb(8 9 67 / 0.06);
+  }
+
   /* Level 3 — modal / dialog */
   .glass-3 {
-    background-color: rgb(255 255 255 / 0.1);
+    background-color: rgb(var(--tint) / 0.1);
     backdrop-filter: blur(40px);
     border: 1px solid rgb(var(--surface-line));
     box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+  }
+
+  [data-theme='light'] .glass-3 {
+    box-shadow: 0 16px 48px rgb(8 9 67 / 0.14);
   }
 
   /*
@@ -132,6 +201,12 @@
     background-color: rgb(36 37 94);
   }
 
+  [data-theme='light'] .surface-header > th {
+    /* Same idea, computed by hand against the light page instead: white with
+       the brand navy composited in at roughly the same strength. */
+    background-color: rgb(233 235 241);
+  }
+
   /*
    * Opaque fill for a column pinned with `position: sticky`. Same colour as the
    * sticky header above, and pinned for the same reason it has to be opaque: a
@@ -142,15 +217,23 @@
     background-color: rgb(36 37 94);
   }
 
+  [data-theme='light'] .surface-sticky {
+    background-color: rgb(233 235 241);
+  }
+
   /*
-   * The same fill with the 3% white tint that marks a differing row already
+   * The same fill with the 3% tint that marks a differing row already
    * composited in. The tint cannot simply be layered on top: the pinned cell
-   * needs one opaque colour, and `bg-white/[0.03]` over an opaque base is a
+   * needs one opaque colour, and `bg-tint/[0.03]` over an opaque base is a
    * different colour from the same tint over the translucent card behind the
    * scrolling columns.
    */
   .surface-sticky-differs {
     background-color: rgb(43 44 99);
+  }
+
+  [data-theme='light'] .surface-sticky-differs {
+    background-color: rgb(224 226 234);
   }
 
   /*
@@ -196,7 +279,7 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: rgb(255 255 255 / 0.06);
+    background-color: rgb(var(--tint) / 0.06);
   }
 
   .skeleton::after {
@@ -206,7 +289,7 @@
     background-image: linear-gradient(
       90deg,
       transparent 0%,
-      rgb(255 255 255 / 0.1) 50%,
+      rgb(var(--tint) / 0.1) 50%,
       transparent 100%
     );
     transform: translateX(-100%);

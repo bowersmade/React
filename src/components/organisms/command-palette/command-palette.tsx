@@ -179,7 +179,7 @@ function ResultRow({ result }: { result: SearchResult }) {
         <li
           className={cn(
             'flex cursor-pointer items-center gap-3 px-5 py-2.5',
-            focus && 'bg-white/[0.07]'
+            focus && 'bg-tint/[0.07]'
           )}
         >
           <Icon size={15} className="text-muted shrink-0" aria-hidden="true" />

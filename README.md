@@ -7,6 +7,41 @@ comparable, and searchable in the browser.
 Built with React 19, TypeScript, Vite, Redux Toolkit, React Router, and
 Headless UI.
 
+## Features
+
+- **Dashboard** — total, critical, and high-severity counts scoped to the
+  active filters; a severity-distribution donut chart, a risk-factor
+  frequency chart, and a trend chart, all built with Recharts; group and
+  repository scope selectors; and the "Analysis" / "AI Analysis" toggles,
+  which filter out findings with `kaiStatus` `invalid - norisk` and
+  `ai-invalid-norisk` respectively, each showing a live count of what it
+  would hide before you click it.
+- **Vulnerability list** — a virtualized table (`react-virtuoso`) holding all
+  236,656+ findings without putting them all in the DOM at once; filtering by
+  severity, review status, date range, group, and repository; sortable
+  columns; and a search box with real-time suggestions (by CVE, package, or
+  image) rather than plain text matching.
+- **Trend analysis** — the same trend chart as the dashboard, over the
+  dataset's full history instead of a recent window, driven by whatever
+  filters were already active on the list.
+- **Compare** — select up to 10 findings and view them side by side, with a
+  "show differences only" toggle and columns that scroll horizontally past
+  four.
+- **CSV export** — exports the currently filtered view, guarded against
+  formula injection in spreadsheet software.
+- **⌘K command palette** — quick navigation and actions without leaving the
+  keyboard.
+- **Shareable, bookmarkable views** — filters and the open detail drawer both
+  live in the URL, so a specific filtered view or a specific finding is
+  something you can paste as a link.
+- **Light / dark theme** — toggle in the header (sun/moon icon, next to the
+  user profile block); the choice is written to `localStorage` and restored
+  on every reload, and falls back to `prefers-color-scheme` on a first
+  visit with nothing stored yet. Colours were sourced from the Figma design
+  rather than a mechanical inversion of the dark palette — see "Why light
+  mode is one CSS variable, not a per-component rewrite" below for the two
+  colours that needed their own light-mode-specific shade.
+
 ## Getting started
 
 ```
@@ -41,8 +76,12 @@ either have nothing to serve or quietly show stale content.
 - `npm run preview` — serves the production build locally, for checking
   performance against something closer to what actually deploys. Run
   `npm run build` first — `preview` doesn't rebuild, it just serves whatever
-  is already in `build/`.
+  is already in `dist/`.
 - `npm run typecheck` — `tsc --noEmit` on its own.
+- `npm run lint` — ESLint, scoped to `react-hooks/rules-of-hooks` and
+  `react-hooks/exhaustive-deps` on top of the TypeScript-ESLint recommended
+  set (see the design-decisions entry below for why it's scoped that
+  narrowly rather than using the plugin's full `recommended-latest`).
 - `npm run format` / `npm run format:check` — Prettier, write or check.
 - `npm run build:data` — regenerates `public/data/*.json` from the raw scan
   export. Only needed if that source data changes: the generated files are
@@ -639,14 +678,109 @@ the check explicitly, ahead of the actual build:
 ```
 
 _A note on the numbers usually quoted for this section — dev server startup
-in ~236ms, a production build in ~2.4s: those come from earlier notes rather
-than a fresh measurement taken alongside this conversion. Both the dev
-server and a production build were attempted here, and both failed for an
-environment reason unrelated to the app or this change: the machine's
-`node_modules` holds a macOS-native binary for Vite's bundler, and the shell
-used to check it here runs inside a separate Linux environment that needs a
-different one. That's a limitation of the tooling used to verify this, not
-something wrong with the project — running either command from a normal
-terminal on the machine itself isn't affected, and `tsc --noEmit`, Prettier,
-and the `build:data` byte-diff above were all still verified successfully
-from here, since none of those touch the native bundler binary._
+in ~236ms, a production build in ~2.4s: those turned out to be from earlier
+notes rather than a real measurement, for an environment reason unrelated to
+the app itself — the machine this was first checked from runs Vite's
+bundler as a macOS-native binary, which doesn't run under the Linux
+environment used to verify it. Real numbers since obtained from a full,
+independent install of this exact project (same `package.json`, real
+`npm install`, no cached artifacts) on a Linux machine: the dev server
+reports `ready in 360 ms`, `vite build` alone completes in roughly 5-7s, and
+the full `npm run build` script — `tsc --noEmit` plus the Vite build —
+finishes in about 15s. Quoted as Linux-sandbox numbers rather than this
+machine's, since that's genuinely where they were measured; expect them to
+differ somewhat by hardware, but not by an order of magnitude, and the
+relative story (dev startup near-instant, full build well under 20s) should
+hold._
+
+### Why light mode is one CSS variable, not a per-component rewrite
+
+Every "glass" surface in the dark theme is a translucent white overlay —
+`bg-white/[0.06]`, `border-white/[0.1]`, and so on — hardcoded as literal
+white across roughly 19 components. A light theme needs those surfaces to
+tint against the page's ink colour instead of white, and doing that
+component by component would mean touching all 19 files now, then
+remembering to keep every new one in that same pattern going forward.
+
+Instead, every literal `white` in those opacity utilities was swapped for a
+new `tint` colour token — `bg-tint/[0.06]`, `border-tint/[0.1]` — that
+Tailwind resolves through a single CSS variable, `--tint`. Dark mode sets
+`--tint: 255 255 255` (white); light mode sets it to the same navy already
+used as `--color-page` in dark mode, `--tint: 8 9 67`. Flipping the whole
+glass-surface system between themes is now one variable, not a
+component-by-component pass — and any new component built the same way
+(`bg-tint/[...]`) works in both themes automatically, no special-casing.
+
+Two real bugs turned up doing this sweep, both worth stating plainly rather
+than glossing over:
+
+- `tailwind.config.js`'s `surface`, `surface-2`, and `line` tokens were
+  hardcoded literal white values, never actually wired to the
+  `--surface-1` / `--surface-2` / `--surface-line` CSS variables that
+  `.glass` / `.glass-2` in `global.css` already used. `bg-surface`,
+  `bg-surface-2`, and `border-line` — used across a large fraction of the
+  app — would have silently stayed dark-mode-only if this hadn't been
+  caught before shipping.
+- A handful of surfaces can't ride a simple opacity tint at all, because
+  they have to be fully opaque — the sticky table header and sticky column
+  are the clearest example (see "Two CSS facts behind the pinned
+  'Attribute' column" above for why they're opaque in the first place).
+  Those get an explicit `[data-theme='light']` override with a hand-picked
+  colour instead of using `--tint`.
+
+Colour values themselves came from the Figma design provided for this
+feature, not from mechanically inverting the dark palette. Two values are
+deliberately not what a naive inversion would produce: the accent blue
+(`#00BFFF` in dark) becomes a darker `#0099DD` in light, and the "resolved"
+green (`#16A34A` in dark) becomes a lighter `#10B981` in light — both
+changed for contrast against a white background rather than a dark one,
+where the original neon/dark values would read as washed out or too heavy
+respectively.
+
+The choice itself is written to `localStorage` and read back from two
+places that have to agree: an inline script in `index.html`'s `<head>`,
+which runs before the stylesheet paints anything and sets `data-theme` on
+`<html>` synchronously so a stored "light" preference doesn't flash dark for
+one frame; and `useTheme.ts`, a hook that does the same lookup on mount and
+keeps `data-theme` in sync with any toggle made during the session.
+
+### Why the ESLint config only turns on two react-hooks rules
+
+`eslint-plugin-react-hooks` recently grew from a plugin that enforced the
+rules of hooks and effect dependencies into something considerably larger —
+the current major version's `recommended-latest` preset also turns on a set
+of React-Compiler-readiness rules: `immutability`, `purity`,
+`set-state-in-effect`, `set-state-in-render`, and others. Turning that full
+preset on here surfaced four real findings, three of them in application
+code this feature wasn't otherwise touching — a `setState` call inside a
+`useEffect` body in `VulnerabilityList.tsx`, another in `useDescriptions.ts`,
+plus a style-only complaint elsewhere.
+
+None of those are wrong to flag, and some may be worth fixing later. But
+adopting them here, this close to a deadline, would mean changing the
+behavior of effects nobody asked to have touched, with no time to verify the
+change against a 236k-row dataset. So the config turns on exactly
+`react-hooks/rules-of-hooks` and `react-hooks/exhaustive-deps` — the two
+rules that were actually asked for — rather than the plugin's full
+recommended set. The one real, in-scope finding ESLint did surface —
+`for (let sev of key)` where `sev` is never reassigned, in `useFilters.ts`
+— was fixed alongside this, since it's a one-line, zero-behavior-change
+correction.
+
+## Known limitations
+
+Stated plainly rather than left to be found:
+
+- **No automated tests.** The pure logic has real invariants worth locking
+  down — the sort comparator being a genuine total order (the abandoned
+  sort/filter optimisation above depended on exactly that), CSV escaping, the
+  selection cap, and search ranking are the first four that would get
+  coverage.
+- **Horizontal overflow below roughly 890px** of viewport width. Fine at
+  1024 and up; not yet handled below that.
+- **`public/data/index.json` is tracked directly in git at ~73MB.** It
+  compresses well today, but every regeneration from a changed source file
+  adds several more megabytes to history permanently, with no pruning.
+- **User preferences cover theme only.** Light/dark is persisted and
+  restored, but nothing else about the dashboard's layout or content is yet
+  user-configurable.

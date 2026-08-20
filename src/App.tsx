@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Layout from './components/global/layout';
 import Spinner from './components/atoms/spinner/spinner';
+import ErrorBoundary from './components/organisms/error-boundary/error-boundary';
 
 /**
  * Every route is code-split. `lazy` turns each import into its own bundle that
@@ -43,18 +44,22 @@ function App() {
         throws when it hits a component that is not there yet.
 
         One boundary around all routes is enough here: only one route renders at
-        a time, so they can share it.
+        a time, so they can share it. ErrorBoundary sits outside Suspense so it
+        also catches a chunk that fails to load at all (a bad deploy, offline),
+        not just errors thrown once a route has mounted.
       */}
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/vulnerabilities" element={<VulnerabilityList />} />
-          <Route path="/trends" element={<TrendAnalysis />} />
-          <Route path="/compare" element={<Compare />} />
-          <Route path="/sandbox" element={<Sandbox />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/vulnerabilities" element={<VulnerabilityList />} />
+            <Route path="/trends" element={<TrendAnalysis />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/sandbox" element={<Sandbox />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </Layout>
   );
 }

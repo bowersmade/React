@@ -104,7 +104,7 @@ export function useFilters() {
       write((next) => {
         next.delete('severities');
 
-        for (let sev of key) {
+        for (const sev of key) {
           next.append('severities', sev);
         }
       });

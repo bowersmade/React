@@ -63,7 +63,7 @@ export default function Select({
           data-testid="sn-select"
           id={selectId}
           className={cn(
-            'border-line text-primary focus-visible:ring-accent focus-visible:ring-offset-page w-full appearance-none rounded-md border bg-white/[0.06] font-sans transition-colors duration-150 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40',
+            'border-line text-primary focus-visible:ring-accent focus-visible:ring-offset-page w-full appearance-none rounded-md border bg-tint/[0.06] font-sans transition-colors duration-150 hover:bg-tint/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40',
             sizeMap[size],
             className
           )}

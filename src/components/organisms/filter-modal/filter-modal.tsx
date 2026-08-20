@@ -108,7 +108,7 @@ function Chip({
         'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors duration-150',
         checked
           ? 'border-accent bg-accent/10'
-          : 'border-line hover:border-white/25 bg-white/[0.04] hover:bg-white/[0.07]'
+          : 'border-line hover:border-tint/25 bg-tint/[0.04] hover:bg-tint/[0.07]'
       )}
     >
       <Checkbox checked={checked} onChange={onToggle} aria-label={label} />
@@ -152,7 +152,7 @@ function DateField({
         min={min}
         max={max}
         onChange={(e) => onChange(e.target.value || null)}
-        className="border-line text-body text-primary focus-visible:ring-accent focus-visible:ring-offset-page w-full rounded-md border bg-white/[0.06] px-3 py-2 font-sans transition-colors duration-150 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none [color-scheme:dark]"
+        className="border-line text-body text-primary focus-visible:ring-accent focus-visible:ring-offset-page w-full rounded-md border bg-tint/[0.06] px-3 py-2 font-sans transition-colors duration-150 hover:bg-tint/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       />
     </label>
   );

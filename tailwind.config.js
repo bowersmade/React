@@ -20,10 +20,30 @@ export default {
         muted: withOpacity('--color-text-muted'),
         disabled: withOpacity('--color-text-disabled'),
 
-        // Glass surfaces
-        surface: 'rgb(255 255 255 / 0.08)',
-        'surface-2': 'rgb(255 255 255 / 0.14)',
-        line: 'rgb(255 255 255 / 0.10)',
+        // Glass surfaces — were hardcoded to the dark theme's white tint;
+        // routed through the same variables `.glass`/`.glass-2` in
+        // global.css already use, so `bg-surface`/`border-line` respond to
+        // the theme instead of staying stuck on dark-mode values.
+        //
+        // Plain strings, not `withOpacity()`, on purpose: these three
+        // variables already bake their alpha in (e.g.
+        // `--surface-line: 255 255 255 / 0.1`). `withOpacity()`'s function
+        // form is what lets Tailwind append its own opacity term for a
+        // bracket modifier (`border-line/50`), but nothing here ever uses
+        // one — and for the bare class Tailwind still appends
+        // `var(--tw-border-opacity, 1)`, producing a second `/` inside
+        // `rgb(...)`. That's invalid CSS, so the browser drops the
+        // declaration and the border falls back to `currentColor` — a
+        // fully opaque white line in dark mode. A plain string is used
+        // as-is with no wrapping, avoiding that entirely.
+        surface: 'rgb(var(--surface-1))',
+        'surface-2': 'rgb(var(--surface-2))',
+        line: 'rgb(var(--surface-line))',
+
+        // The base every `bg-tint/[X]` / `border-tint/[X]` opacity utility
+        // composites against — white in dark mode, the brand navy in light
+        // mode. See `--tint` in global.css.
+        tint: withOpacity('--tint'),
 
         // Severity — solid plus 14% tint for badge backgrounds
         critical: {

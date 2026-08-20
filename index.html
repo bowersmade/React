@@ -4,11 +4,34 @@
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#080943" />
     <meta name="description" content="Vulnerability findings across integrated artifact environments" />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>React App</title>
+    <title>Sentinel</title>
+    <script>
+      // Runs before the stylesheet paints anything, so a stored 'light'
+      // preference applies immediately instead of flashing the dark default
+      // for one frame and then switching — `useTheme` (src/utils/hooks) does
+      // the exact same lookup afterward, to stay in sync with toggles made
+      // during the session.
+      (function () {
+        try {
+          var stored = window.localStorage.getItem('sentinel-theme');
+          var theme =
+            stored === 'dark' || stored === 'light'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          // localStorage can throw in a locked-down context (private
+          // browsing in some browsers); dark is the app's native theme, so
+          // falling through to it is the safe default either way.
+        }
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

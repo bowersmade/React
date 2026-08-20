@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Search, ShieldCheck } from 'lucide-react';
 import { Typography } from '../../foundations/typography/typography';
+import ThemeToggle from '../../atoms/theme-toggle/theme-toggle';
 import { cn } from '../../../utils/cn';
 
 export interface AppHeaderProps {
@@ -45,7 +46,7 @@ export default function AppHeader({
       <button
         type="button"
         onClick={onSearchClick}
-        className="glass rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page mx-auto flex w-full max-w-xl items-center gap-3 px-4 py-2.5 transition-colors duration-150 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="glass rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page mx-auto flex w-full max-w-xl items-center gap-3 px-4 py-2.5 transition-colors duration-150 hover:bg-tint/[0.12] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <Search size={16} className="text-muted shrink-0" aria-hidden="true" />
         <Typography size="body" color="muted" className="truncate">
@@ -62,6 +63,8 @@ export default function AppHeader({
       </button>
 
       <div className="flex shrink-0 items-center gap-3">
+        <ThemeToggle />
+
         <div className="flex items-center gap-2.5">
           <span className="bg-info/40 text-primary text-body-sm flex h-10 w-10 items-center justify-center rounded-md font-semibold">
             {userName.charAt(0)}

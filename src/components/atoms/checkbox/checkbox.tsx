@@ -2,8 +2,10 @@ import type { InputHTMLAttributes } from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
-export interface CheckboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface CheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   checked?: boolean;
   /** Some but not all children selected — renders a dash instead of a tick. */
   indeterminate?: boolean;
@@ -30,7 +32,7 @@ export default function Checkbox({
         checked={checked}
         disabled={disabled}
         aria-checked={indeterminate ? 'mixed' : checked}
-        className="peer h-4 w-4 cursor-pointer appearance-none rounded-xs border transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 border-white/25 bg-white/[0.06] hover:border-white/40 checked:border-accent checked:bg-accent"
+        className="peer h-4 w-4 cursor-pointer appearance-none rounded-xs border transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 border-tint/25 bg-tint/[0.06] hover:border-tint/40 checked:border-accent checked:bg-accent"
         {...restProps}
       />
       {filled ? (

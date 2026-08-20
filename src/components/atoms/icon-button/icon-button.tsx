@@ -8,8 +8,8 @@ const sizeMap = {
 } as const;
 
 const toneMap = {
-  ghost: 'text-muted hover:text-primary hover:bg-white/[0.08]',
-  glass: 'glass text-secondary hover:text-primary hover:bg-white/[0.12]',
+  ghost: 'text-muted hover:text-primary hover:bg-tint/[0.08]',
+  glass: 'glass text-secondary hover:text-primary hover:bg-tint/[0.12]',
 } as const;
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

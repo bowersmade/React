@@ -358,7 +358,7 @@ export default function Compare() {
                 onChange={setDifferencesOnly}
                 className={cn(
                   'focus-visible:ring-accent focus-visible:ring-offset-page relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                  differencesOnly ? 'bg-accent' : 'bg-white/[0.14]'
+                  differencesOnly ? 'bg-accent' : 'bg-tint/[0.14]'
                 )}
               >
                 <span
@@ -454,10 +454,7 @@ function ColumnComparison({
         {rows.map(({ attribute, differs }) => (
           <div
             key={attribute.label}
-            className={cn(
-              'border-line grid border-b last:border-b-0',
-              differs && 'bg-white/[0.03]'
-            )}
+            className={cn('border-line grid border-b last:border-b-0', differs && 'bg-tint/[0.03]')}
             style={{ gridTemplateColumns: template }}
           >
             <div
@@ -474,7 +471,7 @@ function ColumnComparison({
                 <span
                   className={cn(
                     'h-3.5 w-0.5 shrink-0 rounded-full',
-                    differs ? 'bg-accent' : 'bg-white/15'
+                    differs ? 'bg-accent' : 'bg-tint/15'
                   )}
                   aria-hidden="true"
                 />

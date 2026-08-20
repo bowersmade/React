@@ -1,7 +1,7 @@
 import { cn } from '../../../utils/cn';
 
 const toneMap = {
-  neutral: 'bg-white/[0.08] text-secondary border-line',
+  neutral: 'bg-tint/[0.08] text-secondary border-line',
   info: 'bg-info-tint text-info border-info/30',
   resolved: 'bg-resolved/15 text-resolved border-resolved/30',
   accent: 'bg-accent/15 text-accent border-accent/30',
@@ -22,7 +22,12 @@ export interface BadgeProps {
  * Severity has its own component because its four tones are fixed and carry
  * meaning; this one is deliberately generic.
  */
-export default function Badge({ tone = 'neutral', mono = false, className = '', children }: BadgeProps) {
+export default function Badge({
+  tone = 'neutral',
+  mono = false,
+  className = '',
+  children,
+}: BadgeProps) {
   return (
     <span
       data-testid="sn-badge"

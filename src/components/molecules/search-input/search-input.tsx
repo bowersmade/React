@@ -57,14 +57,18 @@ export default function SearchInput({
       onChange={(picked: Suggestion | null) => picked && onSelect?.(picked)}
     >
       <div className={cn('relative flex items-center', className)}>
-        <Search size={16} aria-hidden="true" className="text-muted pointer-events-none absolute left-3" />
+        <Search
+          size={16}
+          aria-hidden="true"
+          className="text-muted pointer-events-none absolute left-3"
+        />
 
         <ComboboxInput
           aria-label="Search findings"
           placeholder={placeholder}
           displayValue={() => value}
           onChange={(e) => onChange(e.target.value)}
-          className="border-line text-primary placeholder:text-muted text-body focus-visible:ring-accent focus-visible:ring-offset-page h-10 w-full rounded-pill border bg-white/[0.06] pr-9 pl-9 font-sans transition-colors duration-150 hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="border-line text-primary placeholder:text-muted text-body focus-visible:ring-accent focus-visible:ring-offset-page h-10 w-full rounded-pill border bg-tint/[0.06] pr-9 pl-9 font-sans transition-colors duration-150 hover:bg-tint/[0.1] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         />
 
         {value ? (

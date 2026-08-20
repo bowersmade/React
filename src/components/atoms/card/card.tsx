@@ -37,7 +37,7 @@ export default function Card<T extends ElementType = 'div'>({
         'rounded-2xl',
         elevationMap[elevation],
         interactive &&
-          'focus-visible:ring-accent focus-visible:ring-offset-page cursor-pointer text-left transition-all duration-150 hover:-translate-y-px hover:border-white/20 hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          'focus-visible:ring-accent focus-visible:ring-offset-page cursor-pointer text-left transition-all duration-150 hover:-translate-y-px hover:border-tint/20 hover:bg-tint/[0.12] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         className
       )}
       {...restProps}

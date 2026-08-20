@@ -2,8 +2,10 @@ import type { ButtonHTMLAttributes } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 
-export interface FilterToggleProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
+export interface FilterToggleProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'onChange'
+> {
   label: string;
   icon?: LucideIcon;
   active: boolean;
@@ -47,7 +49,7 @@ export default function FilterToggle({
           'rounded-pill focus-visible:ring-accent focus-visible:ring-offset-page inline-flex items-center gap-2 border px-5 py-2.5 font-sans transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
             ? 'bg-info border-info text-white hover:bg-info/90'
-            : 'border-line text-secondary hover:text-primary bg-white/[0.04] hover:bg-white/[0.08]'
+            : 'border-line text-secondary hover:text-primary bg-tint/[0.04] hover:bg-tint/[0.08]'
         )}
         {...restProps}
       >
@@ -58,7 +60,7 @@ export default function FilterToggle({
       <span
         className={cn(
           'rounded-pill text-caption px-3 py-1 font-medium whitespace-nowrap',
-          active ? 'bg-info text-white' : 'text-muted bg-white/[0.06]'
+          active ? 'bg-info text-white' : 'text-muted bg-tint/[0.06]'
         )}
       >
         {state}

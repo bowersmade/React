@@ -42,7 +42,7 @@ export default function StateMessage({
     >
       <span
         className={cn(
-          'mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06]',
+          'mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-tint/[0.06]',
           iconClass
         )}
       >
