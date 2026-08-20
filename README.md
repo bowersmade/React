@@ -7,6 +7,8 @@ comparable, and searchable in the browser.
 Built with React 19, TypeScript, Vite, Redux Toolkit, React Router, and
 Headless UI.
 
+**Live:** [sentinel-ai-security-chi.vercel.app](https://sentinel-ai-security-chi.vercel.app/)
+
 ## Features
 
 - **Dashboard** — total, critical, and high-severity counts scoped to the

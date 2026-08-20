@@ -56,7 +56,7 @@ export default {
         },
         medium: {
           DEFAULT: withOpacity('--color-medium'),
-          tint: 'rgb(217 119 6 / 0.14)',
+          tint: 'rgb(234 179 8 / 0.14)',
         },
         low: {
           DEFAULT: withOpacity('--color-low'),

@@ -8,7 +8,7 @@ import { SeverityKey } from './types/data';
 export const chartColors = {
   critical: '#DC2626',
   high: '#F97316',
-  medium: '#D97706',
+  medium: '#EAB308',
   low: '#4F46E5',
   info: '#6366F1',
   resolved: '#16A34A',
