@@ -769,6 +769,27 @@ recommended set. The one real, in-scope finding ESLint did surface —
 — was fixed alongside this, since it's a one-line, zero-behavior-change
 correction.
 
+### Why a viewport gate instead of a responsive rewrite below 890px
+
+The dashboard's layout has never worked below roughly 890px — noted plainly
+in Known Limitations rather than fixed, since a real fix means reworking the
+table, filter bar, and chart grid for a narrow viewport, not a quick patch.
+That was a deliberate scope call made earlier, and it still is.
+
+What changed is what happens at that width instead of nothing: below 890px,
+`index.tsx` now renders a standalone "use a bigger screen" message in place
+of the entire app, checked with `useIsSupportedViewport` before any
+provider mounts. The width check happens above `VulnerabilityProvider`
+specifically so a narrow visitor's browser never fetches the ~81MB dataset
+in the first place — there's nothing at that width that could render it
+usefully, so there's no reason to make it download.
+
+This is a gate, not a fix. The underlying layout still doesn't reflow for a
+phone or a narrow window; it's just no longer the visitor's problem to
+discover by scrolling sideways through a cut-off table. Worth being precise
+about which of those two this is, since they read very differently to
+someone reviewing the project.
+
 ## Known limitations
 
 Stated plainly rather than left to be found:
@@ -778,9 +799,13 @@ Stated plainly rather than left to be found:
   sort/filter optimisation above depended on exactly that), CSV escaping, the
   selection cap, and search ranking are the first four that would get
   coverage.
-- **Horizontal overflow below roughly 890px** of viewport width. Fine at
-  1024 and up; not yet handled below that.
-- **`public/data/index.json` is tracked directly in git at ~73MB.** It
+- **The layout still doesn't reflow below roughly 890px** of viewport
+  width — fine at 1024 and up, not adapted below that. A visitor under that
+  width sees an explicit "use a bigger screen" message instead of the
+  overflowing dashboard (see "Why a viewport gate instead of a responsive
+  rewrite below 890px" above), but the underlying responsive work itself is
+  still not done.
+- **`public/data/index.json` is tracked directly in git at ~81MB.** It
   compresses well today, but every regeneration from a changed source file
   adds several more megabytes to history permanently, with no pruning.
 - **User preferences cover theme only.** Light/dark is persisted and

@@ -6,11 +6,20 @@ import { store } from './store/store';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { VulnerabilityProvider } from './context/vulnerabilitiesContext';
+import MobileNotSupported from './pages/MobileNotSupported';
+import { useIsSupportedViewport } from './utils/hooks/useIsSupportedViewport';
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+/**
+ * Gates the whole app — including `VulnerabilityProvider`'s dataset fetch —
+ * behind a minimum viewport width. See `useIsSupportedViewport` for why
+ * that check has to happen up here rather than inside `App`.
+ */
+function Root() {
+  const isSupported = useIsSupportedViewport();
 
-root.render(
-  <React.StrictMode>
+  if (!isSupported) return <MobileNotSupported />;
+
+  return (
     <BrowserRouter>
       <VulnerabilityProvider>
         <Provider store={store}>
@@ -18,5 +27,13 @@ root.render(
         </Provider>
       </VulnerabilityProvider>
     </BrowserRouter>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+
+root.render(
+  <React.StrictMode>
+    <Root />
   </React.StrictMode>
 );
