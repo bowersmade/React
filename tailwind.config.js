@@ -7,7 +7,7 @@ const withOpacity =
       ? `rgb(var(${variable}))`
       : `rgb(var(${variable}) / ${opacityValue})`;
 
-module.exports = {
+export default {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {

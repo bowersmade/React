@@ -2,6 +2,7 @@
   "name": "react-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@headlessui/react": "^2.2.10",
     "@reduxjs/toolkit": "^2.12.0",
@@ -30,8 +31,16 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css}\""
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

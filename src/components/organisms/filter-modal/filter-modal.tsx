@@ -46,7 +46,7 @@ export interface FilterModalProps {
   /** Bounds of the dataset, so dates with no findings behind them can't be picked. */
   minDate?: string;
   maxDate?: string;
-  /** Findings the pending selection would show. Lets you see before committing. */
+  /** Findings the draft selection would show. Lets you see before committing. */
   previewCount?: number;
   /**
    * Fires when the close animation has finished, ~150ms after `open` goes
@@ -166,7 +166,7 @@ function DateField({
  * multi-part filter is usually built up in several steps — applying each one
  * mid-thought shows the user states they never asked for.
  *
- * `previewCount` is the compromise. The caller can compute what the pending
+ * `previewCount` is the compromise. The caller can compute what the draft
  * selection would return and show it in the footer, so nothing is committed
  * blind.
  *

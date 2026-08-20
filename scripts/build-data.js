@@ -35,8 +35,13 @@
  * Run with: npm run build:data
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// `__dirname` isn't defined under ESM — this is its standard replacement,
+// derived from the module's own URL instead of relying on CommonJS globals.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const SOURCE = path.join(__dirname, '..', 'data', 'ui_demo.json');
 const OUT_DIR = path.join(__dirname, '..', 'public', 'data');
